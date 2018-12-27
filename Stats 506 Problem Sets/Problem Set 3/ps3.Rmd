@@ -1,0 +1,335 @@
+---
+title: "Stats 506, F18, Problem Set 3"
+author: "Xinye Jiang (xinyej@umich.edu)"
+date: "November 17, 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r install library, message=FALSE}
+library(ggplot2)
+```
+
+
+## Question 1
+
+
+```{r q1 source scripts, message=FALSE}
+source("ps3_q1.R")
+```
+
+
+### a.
+
+
+```{r q1a table home stucco division percent ci, echo=FALSE}
+cap_title = '**Table 1.** *Proportion of homes having stucco construction as the major outside wall material by division.*'
+cap_text0 = 'Each row shows the proportion with 95% CI for one division.'
+cap_text1 = 'Rows are sorted by the proportion.'
+cap = paste(cap_title, cap_text0, cap_text1)
+cols = c(' Division ',' Proportion (%)',' 95% CI (%) ')
+
+knitr::kable(home_stucco_div[, c("division", "p_stucco", "CI")], digits=2, 
+             caption=cap, col.names=cols, align='c')
+```
+
+
+```{r q1a figure home stucco division percent ci, fig.cap=cap}
+cap = '**Figure 1.** *Proportion of homes having stucco construction as the major outside wall material by division.*'
+
+ggplot(data=home_stucco_div, 
+       aes(y=p_stucco, x=reorder(division, p_stucco))) + 
+  geom_point() +
+  geom_col( fill = 'palegreen' ) +
+  geom_errorbar(aes(ymin=lwr, ymax=upr)) +
+  theme_bw() +
+  coord_flip() + 
+  xlab('Division') +
+  ylab('Proportion of homes with stucco construction (%)')
+```
+
+
+The percent of homes having stucco construction as the major outside wall material within each division with its 95% CI is shown in Table 1 and Figure 1. Mountain South division had the highest proportion, and East South Central division had the lowest proportion.
+
+
+### b.
+
+
+```{r q1bi table electricity division, echo=FALSE}
+cap_title = '**Table 2.** *Average total electricity usage in kilowatt hours in each division.*'
+cap_text0 = 'Each row shows the average total electricity usage with its 95% CI for one division.'
+cap_text1 = 'Rows are sorted by the average total electricity usage.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Division','Average Total Electricity Usage, kwh/home',
+         '95% CI')
+
+knitr::kable(elec_div[, .(division, avg_elec, CI)], digits=2, caption=cap,
+             col.names=cols, align='c')
+```
+
+
+```{r q1bi figure electricity division, fig.cap=cap}
+cap = '**Figure 2.** *Average total electricity usage in kilowatt hours in each division.*'
+
+ggplot(data=elec_div, 
+       aes(y=avg_elec, x=reorder(division, avg_elec))) + 
+  geom_point() +
+  geom_col( fill = 'palegreen' ) +
+  geom_errorbar(aes(ymin=lwr, ymax=upr)) +
+  theme_bw() +
+  coord_flip() + 
+  xlab('Division') +
+  ylab('Average Total Electricity Usage, kwh/home')
+```
+
+
+The average total electricity usage in kilowatt hours in each division with its 95% CI is shown in Table 2 and Figure 2. East South Central had the largest average total electricity usage, while New England had the smallest.
+
+
+```{r q1bii table electricity status, echo=FALSE}
+cap_title = '**Table 3.** *Average total electricity usage in kilowatt hours stratified by urban and rural status in each division.*'
+cap_text0 = 'Each row shows the average total electricity usage with its 95% CI for each status in one division.'
+cap_text1 = 'Rows are sorted by the average total electricity usage in Rural status.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Division','Rural, kwh/home','Rural 95% CI','Urban, kwh/home','Urban 95% CI')
+
+elec_urban_div_new = elec_urban_div %>%
+  dcast(division ~ status, 
+        value.var = c("avg_elec", "avg_elec_se", "lwr", "upr")) %>%
+  .[, `:=`(CI_Rural = sprintf('(%6.0f, %6.0f)', lwr_Rural, upr_Rural),
+           CI_Urban = sprintf('(%6.0f, %6.0f)', lwr_Urban, upr_Urban))] %>%
+  .[order(-avg_elec_Rural)]
+
+knitr::kable(elec_urban_div_new[, .(division, avg_elec_Rural, CI_Rural,
+                                    avg_elec_Urban, CI_Urban)], 
+             digits=0, caption=cap, col.names=cols, align='c')
+```
+
+
+```{r q1bii figure electricity status, fig.cap=cap}
+cap = '**Figure 3.** *Average total electricity usage in kilowatt hours stratified by urban and rural status in each division.*'
+
+ggplot(data=elec_urban_div, 
+       aes(y=avg_elec, x=reorder(division, -avg_elec), fill=status)) + 
+  geom_col(position = position_dodge()) +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), 
+                position = position_dodge(),
+                col = 'slategrey') +
+  theme_bw() +
+  coord_flip() + 
+  xlab('Division') +
+  ylab('Average Total Electricity Usage, kwh/home') +
+  ylim(c(0,20000)) +
+  scale_fill_manual(values = c('palegreen', 'palevioletred'))
+```
+
+
+The average total electricity usage in kilowatt hours stratified by urban and rural status with its 95% CI in each division is shown in Table 3 and Figure 3. Rural place had larger average total electricity usage than Urban place in all regions except for Mountain South.
+
+
+### c.
+
+
+```{r q1c table home division status disparity, echo=FALSE}
+cap_title = '**Table 4.** *Disparity between urban and rural areas in terms of the proportion of homes with internet access in each division.*'
+cap_text0 = 'Each row shows the proportion for each status and disparity with their 95% CIs in one division.'
+cap_text1 = 'Rows are sorted by the proportion disparity.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Divison','Disparity (%)','95% CI','Rural (%)','Rural 95% CI','Urban (%)','Urban 95% CI')
+
+knitr::kable(internet[, .(division, disp, disp_CI, p_Rural, rural_CI, 
+                          p_Urban, urban_CI)], 
+             digits=1, caption=cap, col.names=cols, align='c')
+```
+
+
+```{r q1c figure home division status disparity, fig.cap=cap}
+cap = '**Figure 4.** *Disparity between urban and rural areas in terms of the proportion of homes with internet access in each division.*'
+
+ggplot(data=internet_urban_div, 
+       aes(y=p, x=reorder(division, p), fill=status)) + 
+  geom_col(position = position_dodge()) +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), 
+                position = position_dodge(),
+                col = 'slategrey') +
+  scale_color_manual(values = c('palegreen', 'palevioletred')) +
+  theme_bw() +
+  coord_flip() + 
+  xlab('Division') +
+  ylab('Proportion of homes with internet access (%)') + 
+  ylim(c(0,100))
+```
+
+
+From the output in Table 4 and Figure 4, we can see that Mountain South division has the largest disparity between urban and rural areas in terms of the proportion of homes with internet access.
+
+
+### d.
+
+
+The question formulated is stated below:
+
+
+What is the percent of homes of mobile home type within each region? Which region has the highest proportion? Which has the lowest?
+
+
+```{r q1d table home mobile region percent ci, echo=FALSE}
+cap_title = '**Table 5.** *Proportion of homes of mobile home type in each region.*'
+cap_text0 = 'Each row shows the proportion with 95% CI for one region.'
+cap_text1 = 'Rows are sorted by the proportion.'
+cap = paste(cap_title, cap_text0, cap_text1)
+cols = c(' Region ',' Proportion (%)',' 95% CI (%) ')
+
+knitr::kable(home_mobile_reg[, c("region", "p_mobile", "CI")], digits=2, 
+             caption=cap, col.names=cols, align='c')
+```
+
+
+```{r q1d figure home mobile region percent ci, fig.cap=cap}
+cap = '**Figure 5.** *Proportion of homes of mobile home type in each region.*'
+
+ggplot(data=home_mobile_reg, 
+       aes(y=p_mobile, x=reorder(region, p_mobile))) + 
+  geom_point() +
+  geom_col( fill = 'palegreen' ) +
+  geom_errorbar(aes(ymin=lwr, ymax=upr)) +
+  theme_bw() +
+  coord_flip() + 
+  xlab('Region') +
+  ylab('Proportion of homes of mobile home type (%)')
+```
+
+
+The percent of homes of mobile home type with its 95% CI in each division is shown in Table 5 and Figure 5. South region had the highest proportion, and Northeast region had the lowest proportion. Proportions are all smaller than 10% and have very small standard errors which can be seen from the small ranges of CIs.
+
+
+\pagebreak
+
+
+## Question 2
+
+
+```{r q2 source scripts, message=FALSE}
+source("ps3_q2.R")
+```
+
+
+Choose the covariance matrix of X as a p by p diagonal matrix whose diagonal entries are all 1 and choose the sigma of Y as 1.
+
+
+```{r q2e table p-values, echo=FALSE}
+cap_title = '**Table 6.** *Monte Carlo estimates in (%) for the family wise error rate, the false discovery rate, the sensitivity and the specificity for the uncorrected and several corrected sets of p-values adjusted by different methods.*'
+cap_text0 = 'Each row shows the Monte Carlo estimates for one set of p-values.'
+cap = paste(cap_title, cap_text0)
+cols = c('Family wise error rate (%)', 'False discovery rate (%)',
+         'Sensitivity (%)', 'Specificity (%)')
+
+knitr::kable(est_mc*100, digits=3, caption=cap,
+             row.names=TRUE, col.names=cols, align='c')
+```
+
+
+```{r q2 figure p-values, fig.cap=cap}
+cap = '**Figure 6.** *Monte Carlo estimates in (%) for the family wise error rate, the false discovery rate, the sensitivity and the specificity for the uncorrected and several corrected sets of p-values adjusted by different methods.*'
+
+ggplot(data=est_mc_figure, 
+       aes(y=est_mc, x=type, fill=method)) + 
+  geom_col(position = position_dodge()) +
+  scale_color_manual(values = 
+                       c('palegreen', 'palevioletred', 'grey', 'blue', 'pink')) +
+  theme_bw() +
+  xlab('Type') +
+  ylab('Monte Carlo estimates (%)') + 
+  ylim(c(0,100))
+```
+
+
+The above table and figure show the family wise error rate, the false discovery rate, the sensitivity and the specificity for the uncorrected and several corrected sets of p-values adjusted by the methods of 'Bonferroni', 'Holm', 'BH' (Benjamini-Hochberg), and 'BY' (Benjamini-Yekuteli). The uncorrected p-values set has the largest family wise error rate and false discovery rate, and after corrections, these two rates decrease significantly. Compare the performance of different correction methods, we can see that "BH" has the largest family wise error rate and false discovery rate among the correction methods, while "Bonferroni" and "Holm" have the smallest. The sensitivities are all extremely large, and so are the specificities. 
+
+
+\pagebreak
+
+
+## Question 3
+
+```{r q3 source scripts, message=FALSE}
+source("ps3_q3.R")
+```
+
+### a.
+
+```{r q3a table beta, echo=FALSE}
+cap_title = '**Table 7.** *The estimated univariate regression coefficients by group for three independent variables disp, hp and wt using "data.table" .*'
+cap_text0 = 'Each row shows the estimated univariate regression coefficients for these three variables in one group.'
+cap = paste(cap_title, cap_text0)
+cols = c('cyl (group)', 'beta for disp', 'beta for hp', 'beta for wt')
+
+knitr::kable(coef_a, digits=4, caption=cap, col.names=cols, align='c')
+```
+
+### b.
+
+```{r q3b table beta, echo=FALSE}
+cap_title = '**Table 8.** *The estimated univariate regression coefficients by group for three independent variables disp, hp and wt using the function written in b.*'
+cap_text0 = 'Each row shows the estimated univariate regression coefficients for these three variables in one group.'
+cap = paste(cap_title, cap_text0)
+cols = c('cyl (group)', 'beta for disp', 'beta for hp', 'beta for wt')
+
+coef_b = cbind(test_disp_b, test_hp_b$beta, test_wt_b$beta)
+colnames(coef_b) = cols
+
+knitr::kable(coef_b, digits=4, caption=cap, col.names=cols, align='c')
+```
+
+Test column by column whether the results are the same: 
+
+```{r q3b test result}
+test_result_b
+```
+
+The function produces the same results as in part a.
+
+### c.
+
+```{r q3c table beta, echo=FALSE}
+cap_title = '**Table 9.** *The estimated univariate regression coefficients by group for three independent variables disp, hp and wt using the dplyr verb "summarize_at()" .*'
+cap_text0 = 'Each row shows the estimated univariate regression coefficients for these three variables in one group.'
+cap = paste(cap_title, cap_text0)
+cols = c('cyl (group)', 'beta for disp', 'beta for hp', 'beta for wt')
+
+knitr::kable(coef_c, digits=4, caption=cap, col.names=cols, align='c')
+```
+
+The table has the same results as in part a. 
+
+### d.
+
+```{r q3d table beta, echo=FALSE}
+cap_title = '**Table 10.** *The estimated univariate regression coefficients by group for three independent variables disp, hp and wt using the function written in d.*'
+cap_text0 = 'Each row shows the estimated univariate regression coefficients for these three variables in one group.'
+cap = paste(cap_title, cap_text0)
+cols = c('cyl (group)', 'beta for disp', 'beta for hp', 'beta for wt')
+
+coef_d = cbind(test_disp_d, test_hp_d$ind, test_wt_d$ind)
+colnames(coef_d) = cols
+
+knitr::kable(coef_d, digits=4, caption=cap, col.names=cols, align='c')
+```
+
+Test column by column whether the results are the same: 
+
+```{r q3d test result}
+test_result_d
+```
+
+The function produces the same results as in part a.
+
+
