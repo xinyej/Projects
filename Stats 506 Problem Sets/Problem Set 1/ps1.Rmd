@@ -1,0 +1,262 @@
+---
+title: "Stats 506, F18, Problem Set 1"
+author: "Xinye Jiang (xinyej@umich.edu)"
+date: "September 30, 2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# 80: --------------------------------------------------------------------------
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## Question 1
+
+### Part A
+
+#### i.
+
+Solution: 
+```cut -d ',' -f 2 recs2015_public_v3.csv | grep 3 | wc -l```
+
+Result: 
+```2010```
+
+There are 2010 rows for region 3 in the RECS 2015 data set. (Region has column number 2.)
+
+#### ii.
+
+Solution: 
+```cut -d ',' -f 1,475-571 recs2015_public_v3.csv > Aii.csv | gzip Aii.csv```
+
+Result: 
+Get a compressed data set containing only the variables: DOEID, NWEIGHT, and BRRWT1-BRRWT96 (Column numbers are 1,475-571.) in the working directory.
+
+### Part B
+
+#### i.
+
+Solution: 
+```awk -F "," 'NR>1 {col[$2]++} END {for(i in col) print i,col[i]}' recs2015_public_v3.csv```
+
+Result: 
+```
+"1" 794
+"2" 1327
+"3" 2010
+"4" 1555
+```
+
+The result shows the number of observations within each region.
+
+#### ii.
+
+Solution: 
+```awk -F ',' '{print $2,$3}' recs2015_public_v3.csv | (read -r; printf "%s\n" "$REPLY"; sort -V) | uniq > region_division.txt```
+
+Result: 
+Get a file "region_division.txt" in the working directory and its contents is shown below. 
+```
+"REGIONC""DIVISION"
+"1""1"
+"1""2"
+"2""3"
+"2""4"
+"3""5"
+"3""6"
+"3""7"
+"4""8"
+"4""9"
+"4""10"
+```
+
+
+\pagebreak
+
+
+## Question 2
+
+```{r q2 source scripts, message=FALSE}
+source("ps1_q2.R")
+```
+
+### a.
+
+```{r q2a airline name, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 1.** *Proportion of flights which was at least 1% between January 1 and October 31, 2013 by airlines.*'
+cap_text0 = 'Each row shows the flights distribution for one airline.'
+cap_text1 = 'Rows are sorted by the proportion of flights.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Airline','Flights (%)')
+
+knitr::kable(select(flights2013_airline_percent, c(name,pct_2013)),
+             digits=2, 
+             caption=cap, 
+             col.names=cols)
+```
+
+The above table shows the names of those airlines which were responsible for at least 1% of the flights departing any of the three NYC airports betweem January 1 and October 31, 2013.
+
+### b.
+
+Divide the required table into several tables to take a deep look at the data.
+
+```{r q2b airline percent 2013, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 2.** *Proportion with 95% CI and number of flights by airlines in the first 10 months of 2013.*'
+cap_text0 = 'Each row shows percent with 95% CI and number for one airline.'
+cap = paste(cap_title, cap_text0)
+
+cols = c('Airline','2013 number ','2013 proportion (%)',
+         '2013 lwr (%)','2013 upr (%)')
+
+knitr::kable(select(flights_airline_percent, 
+                    c(name,number_2013,pct_2013,lwr_2013,upr_2013)),
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+```{r q2b airline percent 2014, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 3.** *Proportion with 95% CI and number of flights by airlines in the first 10 months of 2014.*'
+cap_text0 = 'Each row shows percent with 95% CI and number for one airline.'
+cap = paste(cap_title, cap_text0)
+
+cols = c('Airline','2014 number (%)','2014 proportion (%)',
+         '2014 lwr (%)','2014 upr (%)')
+
+knitr::kable(select(flights_airline_percent, 
+                    c(name,number_2014,pct_2014,lwr_2014,upr_2014)),
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+```{r q2b airline percent change, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 4.** *Change in proportion with 95% CI and in number of flights by airlines between the first 10 months of 2013 and 2014.*'
+cap_text0 = 'Each row shows percent with 95% CI and number of change for one airline.'
+cap_text1 = 'Rows are sorted by the change in percent.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Airline','change ','change percent (%)',
+         'change lwr (%)','change upr (%)')
+
+knitr::kable(select(flights_airline_percent, 
+                    c(name,number_change,pct_change,lwr_change,upr_change)), 
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+Among the airlines from part "a", Delta Air Lines Inc. showed the largest increase in percent and Envoy Air showed the largest decrease in percent. Southwest Airlines Co. showed the largest increase in the number of flights and ExpressJet Airlines Inc. showed the largest decrease in number. We can see that some airlines like JetBlue Airways, showed an increase in the percent of flights but a decrease in the number of flights. This is because the number of total flights in the first ten months of 2014 is smaller than the one of 2013.
+
+### c.
+
+```{r q2c airline percent by airport in 2013, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 5.** *Proportion of flights by airlines in each airport in 2013.*'
+cap_text0 = 'Each row shows the proportion and 95% CI of flights for one combination of the airport and the airline in 2013.'
+cap_text1 = 'Rows are sorted by the airport and the proportion of flights in 2013.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Airport','Airline','2013 proportion (%)','2013 lwr (%)','2013 upr (%)')
+
+knitr::kable(flights2013_airport_percent, 
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+Based on the table above, JetBlue Airways was the largest carrier at John F Kennedy Intl airport in 2013. Delta Air Lines Inc. was the largest carrier at La Guardia airport in 2013. United Air Lines Inc. was the largest carrier at Newark Liberty Intl airport in 2013.
+
+\pagebreak
+
+
+## Question 3
+
+```{r q3 source scripts, message=FALSE}
+source("ps1_q3.R")
+```
+
+### a.
+
+```{r q3a home division percent se, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 6.** *Proportion of homes having stucco construction as the major outside wall material by division.*'
+cap_text0 = 'Each row shows the proportion and standard error for one division.'
+cap_text1 = 'Rows are sorted by the proportion.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Division','Proportion (%)','Standard Error (%)')
+
+knitr::kable(home_div_prop_se, 
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+The percent of homes having stucco construction as the major outside wall material within each division with its standard error is shown above. Mountain South division had the highest proportion, and East South Central division had the lowest division.
+
+### b.
+
+```{r q3bi electricity division, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 7.** *Average total electricity usage in kilowatt hours by division.*'
+cap_text0 = 'Each row shows the average total electricity usage and its standard error for one division.'
+cap_text1 = 'Rows are sorted by the average total electricity usage.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Division','Average Total Electricity Usage','Standard Error')
+
+knitr::kable(elec_div_se, 
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+The average total electricity usage in kilowatt hours in each division with its standard error is shown above. East South Central had the largest average total electricity usage, while New England had the smallest.
+
+```{r q3bii electricity status, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 8.** *Average total electricity usage in kilowatt hours stratified by urban and rural status.*'
+cap_text0 = 'Each row shows the average total electricity usage and its standard error for one status.'
+cap_text1 = 'Rows are sorted by the average total electricity usage.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Status','Average Total Electricity Usage','Standard Error')
+
+knitr::kable(elec_status_se, 
+             digits=2,
+             caption=cap, 
+             col.names=cols)
+```
+
+The average total electricity usage in kilowatt hours stratified by urban and rural status with its standard error is shown above. Rural place had larger average total electricity usage.
+
+### c.
+
+```{r q3c home division status percent se disparity, echo=FALSE}
+# Output a markdown table: -----------------------------------------------------
+cap_title = '**Table 9.** *Disparity between urban and rural areas in terms of the proportion of homes with internet access by division.*'
+cap_text0 = 'Each row shows the proportion disparity and its standard error by division.'
+cap_text1 = 'Rows are sorted by the proportion disparity.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+cols = c('Divison','Disparity (%)','Standard Error (%)')
+
+knitr::kable(home_div_status, 
+             digits=2,
+             caption=cap,
+             col.names=cols)
+```
+
+From the output above, we can see that Mountain South division has the largest disparity between urban and rural areas in terms of the proportion of homes with internet access.
+
