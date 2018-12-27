@@ -1,2 +1,2 @@
 # Projects
-Some projects （including problem sets） completed by Xinye.
+A pool of collection of documents regarding some projects (including problem sets), by Xinye.
