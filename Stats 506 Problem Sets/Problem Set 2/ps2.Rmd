@@ -1,0 +1,355 @@
+---
+title: "Stats 506, F18, Problem Set 2"
+author: "Xinye Jiang (xinyej@umich.edu)"
+date: "October 16, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r install library, message=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+
+## Question 1
+
+```{r q1_data, message=FALSE}
+recs2015_usage = readr::read_delim("recs2015_usage.csv", delim=',')
+```
+
+The table and figure below show estimates and their 95% confidence intervals of national totals for for residential energy consumption about electricity usage in kilowatt hours, natural gas usage in hundreds of cubic feet, propane usage in gallons and kerosene usage in gallons. We can see that the nation consumes more propane than kerosene.
+
+```{r q1_table}
+cap_title = '**Table 1.** *National totals for residential energy consumption.*'
+cap_text0 = 'Each row shows estimate and 95% confidence interval.'
+cap = paste(cap_title, cap_text0)
+
+t_q1 = data.frame(Estimate = t(recs2015_usage[1,]), 
+                  lwr = t(recs2015_usage[1,]-qnorm(0.975)*recs2015_usage[2,]),
+                  upr = t(recs2015_usage[1,]+qnorm(0.975)*recs2015_usage[2,]),
+                  row.names = c("Electricity usage in kilowatt hours",
+                                "Natural gas usage in hundreds of cubic feet",
+                                "Propane usage in gallons",
+                                "Kerosene usage in gallons"))
+
+knitr::kable(t_q1, caption=cap, align='c')
+```
+
+```{r q1_figure, fig.cap=cap}
+cap = '**Figure 1.** *National totals for residential energy consumption.*'
+
+t_q1$usage = c("Electricity (kwh)", "Natural gas (hundreds of cubic feet)",
+               "Propane (gallons)", "Kerosene (gallons)")
+
+ggplot(data=t_q1, aes(x=usage, y=Estimate)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin=lwr, ymax=upr)) +
+  coord_flip() + 
+  theme_bw()
+```
+
+
+\pagebreak
+
+
+## Question 2
+
+
+### b.
+
+Use logistic regression to estimate the relationship between age (in months) and the probability that an individual has a primary rather than a missing or permanent upper right 2nd bicuspid. The probability that an individual has a primary upper right 2nd bicuspid equals to 1 - the probability that an individual loses one. Fit a logisic regression over age and the probability that an individual loses a primary upper right 2nd bicuspid (denote it as ur2b) and I get a model: ur2b = -8.359362 + .0696778 * age . And we can see from the model that when age increases, individuals are more likely to lose their primary upper right 2nd bicuspid.
+
+The estimated ages at which 25, 50 and 75% of individuals lose their primary upper right 2nd bicuspid by the fitted model (rounded to the nearest month) are: 
+```{r}
+c(104,120,136)
+```
+
+A range of representative age values with one year increments by taking the floor (in years) of the 25%-ile and the ceiling (in years) of the 75%-ile are: 
+```{r}
+c(8,9,10,11,12)
+```
+
+
+### c.
+
+#### The final logistic regression model is 'ur2b ~ ridagemn(age) + i.race_black + indfmpir(pir)'. ('ur2b' means the probability that an individual loses a primary upper right 2nd bicuspid)
+
+```{r q2c_table_finalmodel}
+cap_title = '**Table 2.** *Regression table for the final model.*'
+cap_text0 = 'Each row shows coefficient estimate, its 95% confidence interval and p-value.'
+cap = paste(cap_title, cap_text0)
+
+t_q2c = tibble(UR2B = c("Intercept", "age", "race black", 
+                                "poverty income ratio"),
+               Coefficient = c(-8.460287, .0713747, .4949803, -.1190729), 
+               lwr = c(-9.148294, .0660704, .2030943, -.2080121),
+               upr = c(-7.772281, .0766789, .7868664, -.0301337),
+               pvalue = c(0.000, 0.000, 0.001, 0.009)
+               )
+t_q2c %>%
+  transmute(UR2B,
+            Coefficient,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr),
+            pvalue
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+#### Model fitting process: 
+
+```{r q2bc_table_model_fitting_process}
+cap_title = '**Table 3.** *Model fitting process.*'
+cap_text0 = 'Each row shows one step in the logistic regression model fitting process.'
+cap = paste(cap_title, cap_text0)
+
+t_q2bc = tibble(Step = 1:6,
+                Model = c("ur2b ~ age", 
+                          "ur2b ~ age + gender", 
+                          "ur2b ~ age + race_mexican", 
+                          "ur2b ~ age + race_black", 
+                          "ur2b ~ age + race_black + race_other",
+                          "ur2b ~ age + race_black + pir"),
+                BIC = c(1533.407, 1542.055, 1542.285, 
+                        1529.281, 1536.103, 1462.895),
+                `Improve or Not` = c('/', 'No', 'No', 'Yes', 'No', 'Yes'),
+                Decision = c("Retain age", "Not retain gender", 
+                             "Not retain race_mexican", "Retain race_black",
+                             "Not retain race_other", "Retain pir")
+                )
+
+knitr::kable(t_q2bc, caption=cap, align='c')
+```
+
+By the above steps described in Table 3, I get the final model. The variables 'race_black' and 'pir' improve BIC, so I retain them in the final model. The variables 'gender', 'race_mexican' and 'race_other' do not improve BIC, so I do not retain them.
+
+
+### d.
+
+#### d.1 Adjusted predictions at the mean (for other values) at each representative age: 
+
+```{r q2d1_table_adjusted_pred}
+cap_title = '**Table 4.** *Adjusted predictions at the mean at each representative age.*'
+cap_text0 = 'Each row shows an adjusted prediction at the mean with its 95% CI at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q2d1 = tibble(Age = c(8,9,10,11,12),
+                `Adjusted Prediction` = c(.145906, .2868807, .4864818, 
+                                          .6904898, .8400911),
+                lwr = c(.1208938, .2542412, .4522963, .6601904, .8169874),
+                upr = c(.1709183, .3195202, .5206673, .7207892, .8631948))
+
+t_q2d1 %>%
+  transmute(Age,
+            `Adjusted Prediction`,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr)
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+#### d.2 The marginal effects at the mean of any retained categorical variables at the representative ages: 
+
+```{r q2d2_table_marginal_effect}
+cap_title = '**Table 5.** *The marginal effect at the mean of race_black at each representative age.*'
+cap_text0 = 'Each row shows the marginal effect at the mean with its 95% CI at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q2d2 = tibble(Age = c(8,9,10,11,12),
+                `Marginal effect at the mean` = c(.066838, .1056674, .1230124,
+                                                  .1008256, .0616343),
+                lwr = c(.0243512, .0414291, .0514066, .0440151, .0273068),
+                upr = c(.1093247, .1699056, .1946183, .157636, .0959618))
+
+t_q2d2 %>%
+  transmute(Age,
+            `Marginal effect at the mean`,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr)
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+#### d.3 The average marginal effects of any retained categorical variables at the representative ages: 
+
+```{r q2d3_table_avg_marginal_effect}
+cap_title = '**Table 6.** *The average marginal effect of race_black at each representative age.*'
+cap_text0 = 'Each row shows the average marginal effect with its 95% CI at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q2d3 = tibble(Age = c(8,9,10,11,12),
+                `Average marginal effect` = c(.0670636, .1051526, .1219341,
+                                              .1003884, .061892),
+                lwr = c(.0245406, .0412049, .0507861, .0437318, .0274394),
+                upr = c(.1095867, .1691004, .1930821, .157045, .0963445))
+
+t_q2d3 %>%
+  transmute(Age,
+            `Average marginal effect`,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr)
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+We can see that the marginal effects at the mean and the average marginal effects of any retained categorical variables at each representative age are quite close.
+
+### e. Refit the final model from part c using 'svy'.
+
+```{r q2e_table_svy_finalmodel}
+cap_title = '**Table 7.** *Regression table for the final model refitted using svy.*'
+cap_text0 = 'Each row shows coefficient estimate, its 95% confidence interval and p-value.'
+cap = paste(cap_title, cap_text0)
+
+t_q2e = tibble(UR2B = c("Intercept", "age", "race black", 
+                                "poverty income ratio"),
+               Coefficient = c(-7.516015, .061941, .5434941, -.0811815), 
+               lwr = c(-9.352386, .0465314, .2318871, -.1924264),
+               upr = c(-5.679644, .0773506, .855101, .0300635),
+               pvalue = c(0.000, 0.000, 0.002, 0.141)
+               )
+t_q2e %>%
+  transmute(UR2B,
+            Coefficient,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr),
+            pvalue
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+After refitting the final model from part c using "svy", the variable 'pir' becomes not statistically significant any more as compared to before, which can be seen from the change of its corresponding p-value. Before refitting, p-value of 'pir' equals to 0.009 and is smaller than 0.05, while after refitting, p-value of 'pir' equals to 0.141 and is bigger than 0.05. And almost all coefficients' 95% CIs have bigger range of values than before, which can been seen from the above table.
+
+The differences are due to in part b-d we ignore the survey aspect of the data and analyze it as if the data are from a simple random sample, while in part e we consider the survey setting.
+
+
+\pagebreak
+
+
+## Question 3
+
+```{r q3 source scripts, message=FALSE, warning=FALSE}
+source("ps2_q3.R")
+```
+
+### b.
+
+Use logistic regression to estimate the relationship between age (in months) and the probability that an individual has a primary rather than a missing or permanent upper right 2nd bicuspid. The probability that an individual has a primary upper right 2nd bicuspid equals to 1 - the probability that an individual loses one. Fit a logisic regression over age and the probability that an individual loses a primary upper right 2nd bicuspid (denote it as ur2b) and I get a model: ur2b = -8.359363 + .069678 * age . And we can see from the model that when age increases, individuals are more likely to lose their primary upper right 2nd bicuspid.
+
+The estimated ages at which 25, 50 and 75% of individuals lose their primary upper right 2nd bicuspid by the fitted model (rounded to the nearest month) are listed below: 
+```{r q3b_age_estimate}
+age_hat
+```
+
+A range of representative age values with one year increments by taking the floor (in years) of the 25%-ile and the ceiling (in years) of the 75%-ile are listed below: 
+```{r q3b_age_representative}
+age_rep
+```
+
+### c.
+
+#### The final logistic regression model: ur2b ~ age + race_black + pir ('ur2b' means the probability that an individual loses a primary upper right 2nd bicuspid)
+
+```{r q3c_summary_finalmodel}
+summary(logit_final)
+```
+
+```{r q3c_table_finalmodel}
+cap_title = '**Table 8.** *Regression table for the final model.*'
+cap_text0 = 'Each row shows coefficient estimate, its 95% confidence interval and p-value.'
+cap = paste(cap_title, cap_text0)
+
+t_q3c = tibble(Coefficients = c("Intercept", "age", "race black", 
+                                "poverty income ratio"),
+               Estimate = coef(summary(logit_final))[,1], 
+               lwr = coef(summary(logit_final))[,1]-qnorm(0.975)*coef(summary(logit_final))[,2],
+               upr = coef(summary(logit_final))[,1]+qnorm(0.975)*coef(summary(logit_final))[,2],
+               pvalue = coef(summary(logit_final))[,4]
+               )
+
+t_q3c %>%
+  transmute(Coefficients,
+            Estimate,
+            ` 95% CI `= sprintf('(%1.5f, %1.5f)', lwr, upr),
+            pvalue
+            ) %>%
+  knitr::kable(caption=cap, digits=5, align='c')
+```
+
+#### Model fitting process: 
+
+```{r q3bc_table_model_fitting_process}
+cap_title = '**Table 9.** *Model fitting process.*'
+cap_text0 = 'Each row shows one step in the logistic regression model fitting process.'
+cap = paste(cap_title, cap_text0)
+
+t_q3bc = tibble(Step = 1:6,
+                Model = c("ur2b ~ age", 
+                          "ur2b ~ age + gender", 
+                          "ur2b ~ age + race_mexican", 
+                          "ur2b ~ age + race_black", 
+                          "ur2b ~ age + race_black + race_other",
+                          "ur2b ~ age + race_black + pir"),
+                BIC = c(BIC(logit_age), BIC(logit_gender), BIC(logit_mex),
+                        BIC(logit_black), BIC(logit_other), BIC(logit_pir)),
+                `Improve or Not` = c('/', 'No', 'No', 'Yes', 'No', 'Yes'),
+                Decision = c("Retain age", "Not retain gender", 
+                             "Not retain race_mexican", "Retain race_black",
+                             "Not retain race_other", "Retain pir")
+                )
+
+knitr::kable(t_q3bc, caption=cap, align='c')
+```
+
+By the steps described in the above table, I get the final model. The variables 'race_black' and 'pir' improve BIC, so I retain them in the final model. The variables 'gender', 'race_mexican' and 'race_other' do not improve BIC, so I do not retain them.
+
+
+### d.
+
+#### d.1 Adjusted predictions at the mean (for other values) at each representative age: 
+
+```{r q3d1_table_adjusted_pred}
+cap_title = '**Table 10.** *Adjusted predictions at the mean at each representative age.*'
+cap_text0 = 'Each row shows an adjusted prediction at the mean at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q3d1 %>%
+  transmute(Age = age,
+            `Adjusted Prediction` = adjusted_pred) %>%
+  knitr::kable(caption=cap, align='c', digits=5)
+```
+
+#### d.2 The marginal effects at the mean of any retained categorical variables at the representative ages: 
+
+```{r q3d2_table_marginal_effect}
+cap_title = '**Table 11.** *The marginal effect at the mean of race_black at each representative age.*'
+cap_text0 = 'Each row shows the marginal effect at the mean at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q3d2 %>%
+  transmute(Age = age,
+            `Marginal effect at the mean of race_black` = marginal_effect) %>%
+  knitr::kable(caption=cap, align='c', digits=5)
+```
+
+#### d.3 The average marginal effects of any retained categorical variables at the representative ages: 
+
+```{r q3d3_table_avg_marginal_effect}
+cap_title = '**Table 12.** *The average marginal effect of race_black at each representative age.*'
+cap_text0 = 'Each row shows the average marginal effect at a representative age.'
+cap_text1 = 'Rows are sorted by age.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+t_q3d3 %>%
+  transmute(Age = age,
+            `Average marginal effect of race_black` = avg_marginal_effect) %>%
+  knitr::kable(caption=cap, align='c', digits=5)
+```
+
+We can see that the marginal effects at the mean and the average marginal effects of any retained categorical variables at each representative age are quite close.
+
+Compare the outputs from Stata in question 2 and the outputs from R in question 3, we can see that the results are the same.
