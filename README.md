@@ -1,2 +1,2 @@
 # Projects
-Some projects （including problem sets） accomplished by Xinye.
+Some projects （including problem sets） completed by Xinye.
