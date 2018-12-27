@@ -1,0 +1,275 @@
+---
+title: "Biostatistics 685/Statistics 560 Nonparametric Statistics Final Project"
+author: "Xinye Jiang"
+date: "December 18, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+allergy <- read.table("C:/Users/Administrator/Desktop/560/allergynew.txt")
+source("C:/Users/Administrator/Desktop/560/lsmooth.R")
+```
+
+
+### (1) There is an association between 'age' and 'hemoglobin'.
+
+Kendall's tau is one nonparametric measure of association that could deal with the problem that whether there is an association between 'age' and 'hemoglobin'. I prefer this one because kendall's tau is an appropriate nonparametric method that could measure the association between paired data well, as 'age' and 'hemoglobin' were clearly paired observations collected from each person. And kendall's tau is easy to interpret, as it takes advantage of the probability of concordance and discordance.
+
+Kendall's tau's corresponding null hypothesis is that 'age' and 'hemoglobin' are independent, i.e., there is no association between 'age' and 'hemoglobin'.
+
+```{r}
+cor.test(allergy$age, allergy$hemoglobin, method="kendall")
+```
+
+By R function 'cor.test()', we can get a p-value smaller than 0.05 and sample kendall's tau estimate -0.1149615. To derive the exact null distribution and corresponding p-value, use permutation method (hold 'age' fixed, shuffle 'hemoglobin') to make inference. 
+
+```{r}
+Nperm <- 200
+k_perm <- NULL
+set.seed(3)
+for (i in 1:Nperm)
+{
+ hemoglobin.perm <- sample(allergy$hemoglobin)
+ k_perm <- rbind(k_perm, 
+                 cor(allergy$age, hemoglobin.perm, method="kendall"))
+}
+k_pval <- 2*mean(k_perm <= 
+                   cor(allergy$age, allergy$hemoglobin, method="kendall"))
+paste("p-value using permutation method:", k_pval)
+```
+
+We can see that p-value using permutation method is smaller than 0.05 . Thus we reject the null hypothesis and conclude that hemoglobin is associated with age by the nonparametric measure of association - kendall's tau.
+
+\pagebreak
+
+### (2) There is no difference in days among the four treatment groups.
+
+Kruskal-Wallis test would be an appropriate test to address investigators' concern that there may be difference in days among the four treatment groups. This is because we are comparing days among four independent treatment groups and there is no block design regarding it.
+
+Kruskal-Wallis test's corresponding null hypothesis is that there is no difference in days among the four treatment groups. 
+
+Using the 'kruskal.test()' function in R, we can get: 
+
+```{r}
+kruskal.test(allergy$day~allergy$treatnew)
+kwstat <- kruskal.test(allergy$day~allergy$treatnew)$statistic
+```
+
+To derive the exact null distribution and corresponding p-value, do Kruskal-Wallis test with permutation distribution (by permuting the group assignment many times) instead of chi-squared approximation to make inference.
+
+```{r}
+kw_perm <- NULL
+set.seed(3)
+for(i in 1:Nperm){
+  tr.perm <- sample(allergy$treatnew)
+  kw_perm <- c(kw_perm, 
+               kruskal.test(allergy$day~tr.perm)$statistic)
+}
+kw_pval <- mean(kw_perm >= kwstat)
+paste("p-value using permutation method:", kw_pval)
+```
+
+The p-values above from chi-squared approximation and permutation method are both much larger than 0.05. So we fail to reject the null hypothesis and reach the conclusion that there is no difference in days among the four treatment groups, the days are chosen randomly.
+
+\pagebreak
+
+### (3) The pattern of log-transformed pollen levels over the course of the study: 
+
+Make a scatterplot of the study day and log-transformed pollen levels observations, and superimpose local average kernel smoother, local linear kernel smoother and local quadratic kernel smoother onto it. Here use 'lsmooth()' function and set xmin = minimum value of day, xmax = maximum value of day, npoints = 167 and h using the default setting (In order to do question 4, set the x at which to compute fitted values cover all the original x points).
+
+```{r}
+loc_avg = lsmooth(allergy$day, allergy$logpollen, poly=0, npoints=167, 
+                  xmin=min(allergy$day), xmax=max(allergy$day))
+loc_linear = lsmooth(allergy$day, allergy$logpollen, poly=1, npoints=167, 
+                     xmin=min(allergy$day), xmax=max(allergy$day))
+loc_quadratic = lsmooth(allergy$day, allergy$logpollen, poly=2, npoints=167,
+                        xmin=min(allergy$day), xmax=max(allergy$day))
+```
+
+```{r}
+plot(allergy$day, allergy$logpollen, xlab="Study Day",
+     ylab="Log-transformed Pollen Levels")
+lines(loc_avg$fit[,1], loc_avg$fit[,2], col="blue")
+lines(loc_linear$fit[,1], loc_linear$fit[,2], col="red")
+lines(loc_quadratic$fit[,1], loc_quadratic$fit[,2], col="green")
+legend(180, 1, 
+       legend = c("local average smoother", 
+                  "local linear smoother", 
+                  "local quadratic smoother"), 
+       col = c("blue", "red", "green"), 
+       lty=c(1,1,1), 
+       cex = 0.6)
+plot(allergy$day, allergy$logpollen, xlab="Study Day",
+     ylab="Log-transformed Pollen Levels", main="Local Linear Smoother")
+lines(loc_linear$fit[,1], loc_linear$fit[,2], col="red")
+```
+
+The above plot visually shows the pattern of log-transformed pollen levels over the course of the study and how each local kernel smoother fits the data. The log-transformed pollen levels increase over the first half of the course of the study with the increasing rate slowing down over time, decrease evenly over the last half of the study course and tends to increase at the last phase of the study course.
+
+Local linear kernel smoother describes the pattern well and should be used to produce the final answer. This method fits local linear models within the window which a certain study day is in, and gets the estimate of its corresponding log pollen level by plugging the study day value into the fitted model. 
+
+Choosing this method is because we can see from the first plot that local average kernel smoother fails to catch the pattern as it addresses bias at boundaries much more poorly than other two smoothers do. The local quadratic kernel smoother is affected by the data at boundaries too much due to its higher order, and thus seems to have the issue of overfitting. Local kernel smoothers which have order larger than 2, may have the same overfitting problem. The local linear kernel smoother fits the observations and describes the pattern well. So the pattern of log-transformed pollen levels over the course of the study should be local linear kernel smoothing. What's more, I chose this over spline methods because it saves the efforts to choose knots.
+
+\pagebreak
+
+### (4) Possible 95% confidence bands provided by bootstrapping the original data and bootstrapping the residuals: 
+
+```{r}
+bootperm_a = NULL
+bootperm_b = NULL
+ind_day = loc_linear$fit[,1] %in% allergy$day
+ord = sort(allergy$day, index.return=T)
+
+fit = data.frame(day = loc_linear$fit[,1][ind_day], 
+                 logpollen_hat = loc_linear$fit[,2][ind_day])
+m = merge(fit, allergy, by='day')
+m$residual_b = m$logpollen - m$logpollen_hat
+
+set.seed(3)
+for(i in 1:Nperm){
+  ind <- sample(nrow(allergy), replace=T)
+  lsm_a = lsmooth(allergy$day[ind], allergy$logpollen[ind], poly=1, 
+                  npoints=167, xmin=min(allergy$day), xmax=max(allergy$day))
+  lsm_b = lsmooth(m$day, m$logpollen_hat+m$residual_b[ind],
+                  poly=1, npoints=167, 
+                  xmin=min(allergy$day), xmax=max(allergy$day))
+  bootperm_a = rbind(bootperm_a, lsm_a$fit[,2][ind_day])
+  bootperm_b = rbind(bootperm_b, lsm_b$fit[,2][ind_day])
+}
+
+se_a = apply(bootperm_a, 2, sd)
+upr_a = loc_linear$fit[,2][ind_day] + qnorm(0.975) * se_a
+lwr_a = pmax(loc_linear$fit[,2][ind_day] - qnorm(0.975) * se_a, 0)
+se_b = apply(bootperm_b, 2, sd)
+upr_b = loc_linear$fit[,2][ind_day] + qnorm(0.975) * se_b
+lwr_b = pmax(loc_linear$fit[,2][ind_day] - qnorm(0.975) * se_b, 0)
+```
+
+```{r}
+plot(allergy$day, allergy$logpollen, xlab="Study Day",
+     ylab="Log-transformed Pollen Levels", ylim=c(0,5))
+lines(loc_linear$fit[,1], loc_linear$fit[,2], col="red")
+lines(loc_linear$fit[,1][ind_day], upr_a, col="blue", lty=2)
+lines(loc_linear$fit[,1][ind_day], lwr_a, col="blue", lty=2)
+lines(loc_linear$fit[,1][ind_day], upr_b, col="green", lty=2)
+lines(loc_linear$fit[,1][ind_day], lwr_b, col="green", lty=2)
+legend(182, 1, 
+       legend = c("local linear smoother", 
+                  "95% CI by bootstrapping the original data", 
+                  "95% CI by bootstrapping the residuals"), 
+       col = c("red", "blue", "green"), 
+       lty=c(1,2,2), 
+       cex = 0.5)
+```
+
+The plot above shows a visual summary of the variability of the local linear smoother of log-transformed pollen levels over the course of the study. The blue dashed lines show the 95% confidence band provided by bootstrapping the original data and the green dashed lines show the 95% confidence band provided by bootstrapping the residuals. I prefer the 95% confidence band provided by bootstrapping the original data. This is because bootstrapping the residuals may bring large variance to those areas that originally do not have large variance, which is not a problem by bootstrapping the original data. In this problem, the 95% confidence bands provided by these two bootstrapping methods do not have much difference.
+
+\pagebreak
+
+### (5) An estimate of the day in the study when peak log-transformed pollen levels were observed with a 95% confidence interval: 
+
+Estimated day when peak log-transformed pollen levels were observed is chosen by finding the day corresponding to the maximum fitted log-transformed pollen levels. And use the method of bootstrapping the original data to provide the 95% confidence interval. 
+
+```{r}
+est = loc_linear$fit[,1][loc_linear$fit[,2] == max(loc_linear$fit[,2])]
+bootperm_est = NULL
+set.seed(3)
+for(i in 1:Nperm){
+  ind <- sample(nrow(allergy), replace=T)
+  lsm_est = lsmooth(allergy$day[ind], allergy$logpollen[ind], poly=1, 
+                  npoints=167, xmin=min(allergy$day), xmax=max(allergy$day))
+  bootperm_est= c(bootperm_est, 
+                  lsm_est$fit[,1][lsm_est$fit[,2] == max(lsm_est$fit[,2])])
+}
+
+est_band = quantile(bootperm_est, p=c(0.025, 0.975))
+
+cat("An estimate of the day in the study when peak log-transformed pollen levels were observed:", est, "\n")
+cat("Its 95% confidence interval: (", est_band[1], ",", est_band[2], ")\n")
+```
+
+\pagebreak
+
+### (6) The pattern of total allergy severity scores varied with log-transformed pollen levels for each of the four treatment groups: 
+
+```{r}
+tot = allergy$itchy + allergy$sneezy + allergy$runny + allergy$stuffy
+logpollen_1 = allergy$logpollen[allergy$treatnew==1]
+tot_1 = tot[allergy$treatnew==1]
+logpollen_2 = allergy$logpollen[allergy$treatnew==2]
+tot_2 = tot[allergy$treatnew==2]
+logpollen_3 = allergy$logpollen[allergy$treatnew==3]
+tot_3 = tot[allergy$treatnew==3]
+logpollen_4 = allergy$logpollen[allergy$treatnew==4]
+tot_4 = tot[allergy$treatnew==4]
+loc_linear1 = lsmooth(logpollen_1, tot_1, poly=1)
+loc_linear2 = lsmooth(logpollen_2, tot_2, poly=1)
+loc_linear3 = lsmooth(logpollen_3, tot_3, poly=1)
+loc_linear4 = lsmooth(logpollen_4, tot_4, poly=1)
+par(mfrow=c(2,2))
+plot(logpollen_1, tot_1, xlab="Log-transformed Pollen Levels",
+     ylab="Total Allergy Severity Scores", main="Treatment Group 1")
+lines(loc_linear1$fit[,1], loc_linear1$fit[,2], col="red")
+plot(logpollen_2, tot_2, xlab="Log-transformed Pollen Levels",
+     ylab="Total Allergy Severity Scores", main="Treatment Group 2")
+lines(loc_linear2$fit[,1], loc_linear2$fit[,2], col="red")
+plot(logpollen_3, tot_3, xlab="Log-transformed Pollen Levels",
+     ylab="Total Allergy Severity Scores", main="Treatment Group 3")
+lines(loc_linear3$fit[,1], loc_linear3$fit[,2], col="red")
+plot(logpollen_4, tot_4, xlab="Log-transformed Pollen Levels",
+     ylab="Total Allergy Severity Scores", main="Treatment Group 4")
+lines(loc_linear4$fit[,1], loc_linear4$fit[,2], col="red")
+```
+
+The above plot visually shows how the pattern of total allergy severity scores varied with log-transformed pollen levels for each of the four treatment groups. The red imposed lines show fitted local linear kernel smoother.
+
+We can see that there is an obvious linearly increasing trend in total allergy severity scores when log-transformed pollen levels increase in the treatment group 1. And there seems to exist a trend of slow increase in total allergy severity scores when log-transformed pollen levels increase in treatment group 4. No obvious pattern can be seen regarding total allergy severity scores with the varying log-transformed pollen levels in treatment group 2 and 3.
+
+\pagebreak
+
+### (7) The treatment group 2 and 3 appear to be "effective". 
+
+In order to find which, if any, of the four treatment groups appear to be "effective", defined as keeping average total allergy severity scores stable regardless of pollen level, test whether there is an association between pollen levels and total allergy severity scores for each group. 
+
+The null hypothesis H0 is that for each group, the expectation of total allergy severity scores given any pollen level is the same for all pollen levels. The test statistic is F = {(RSS0 - RSS1) / (df0 - df1)} / {RSS1 / df1}, where RSS0 and RSS1 are residual sum of squares from the reduced model when H0 is true and the full model fitted by local linear kernel smoothers respectively, and df0 and df1 are corresponding degrees of freedom of the two models. Use 'lsmooth()' function to fit the data by local linear kernel smoother for each group and derive the test statistic. And use permutation methods to get the null distribution for F and corresponding p-value. This method is appropriate because now the model is fitted by local average kernel smoother.
+
+```{r}
+p = NULL
+Fstat = NULL
+set.seed(3)
+for(i in 1:4){
+RSS0 = sum({tot[allergy$treatnew==i] - mean(tot[allergy$treatnew==i])} ^ 2)
+df0 = length(tot[allergy$treatnew==i]) - 1
+loc_lin = lsmooth(allergy$logpollen[allergy$treatnew==i],
+                  tot[allergy$treatnew==i], poly=1, obsfit=T)
+RSS1 = loc_lin$mse*loc_lin$df
+df1 = loc_lin$df
+F0 = (RSS0-RSS1)/(df0-df1) / loc_lin$mse
+Fstat = c(Fstat, F0)
+F1_perm = NULL
+set.seed(3)
+for (j in 1:Nperm){
+ tot.perm <- sample(tot[allergy$treatnew==i])
+ loc_lin0 = lsmooth(allergy$logpollen[allergy$treatnew==i],
+                    tot.perm, poly=1, obsfit=T)
+ F1_perm <- c(F1_perm, 
+ (RSS0-loc_lin0$mse*loc_lin0$df)/(df0-loc_lin0$df) / loc_lin0$mse)
+}
+p = c(p, mean(F1_perm >= F0))
+}
+```
+
+```{r}
+for(i in 1:4){
+  cat("F statistics for the treatment group", i, ":", Fstat[i],"\n")
+  cat("The corresponding p-value:", p[i],"\n\n")
+}
+```
+
+The corresponding p-values for the four treatment groups are shown above. We can see that group 1 has a very small p-value, which indicates the null hypothesis does not hold. For treatment group 1, there is an association between pollen levels and total allergy severity scores, and thus this treatment does not appear to be effective. As group 4 also has a p-value smaller than 0.05, we get the same conclusion as what we get for group 1, the treatment fails to keep average total allergy severity scores stable regardless of pollen levels. For group 2 and 3, we can see p-values much larger than 0.05 . So we fail to reject the null hypothesis and conclude that these two treatment groups appear to be effective and keep average total allergy severity scores stable regardless of pollen levels. 
+
+
