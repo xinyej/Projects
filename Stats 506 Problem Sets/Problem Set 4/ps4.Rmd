@@ -1,0 +1,137 @@
+---
+title: "Stats 506, F18, Problem Set 4"
+author: "Xinye Jiang (xinyej@umich.edu)"
+date: "December 11, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Question 1
+
+```{r q1 source scripts, message=FALSE}
+source("ps4_q1.R")
+```
+
+```{r q1 table hit birth, echo=FALSE}
+cap_title = '**Table 1.** *The all-time leader in hits for each birth country.*'
+cap_text0 = 'Each row shows the player name, debut, country of birth and the number of hits for the all-time leader of a birth country.'
+cap_text1 = 'Rows are sorted by the number of hits.'
+cap = paste(cap_title, cap_text0, cap_text1)
+
+knitr::kable(hit_birth_table, caption=cap, align='l')
+```
+
+\pagebreak
+
+## Question 2
+
+### a. 
+
+```{r q2a source scripts, message=FALSE}
+source("ps4_q2a.R")
+```
+
+```{r q2a table mc est se, echo=FALSE}
+cap = '**Table 2.** *The Monte Carlo estimate and its standard error for each metric and each method when the sigma of y is 1 and rho of X is -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75 using mclapply. (Only partial data is shown.)*'
+
+cols = c("Rho","Sigma","Metric","Method","Est","SE")
+
+knitr::kable(results_q4a[1:17,], caption=cap, col.names=cols,
+             align='l', digits=5)
+```
+
+### b. 
+
+```{r q2b load data}
+load("results_q4b.RData")
+```
+
+```{r q2b table mc est se, echo=FALSE}
+cap = '**Table 3.** *The Monte Carlo estimate and its standard error for each metric and each method when the sigma of y is 0.25, 0.5, 1 and rho of X is -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75 using doParallel. (Only partial data is shown.).*'
+
+cols = c("Rho","Sigma","Metric","Method","Est","SE")
+
+knitr::kable(results_q4b[1:17,], caption=cap, col.names=cols,
+             align='l', digits=5)
+```
+
+### c. 
+
+```{r get the data frame in the ps4_q2c-1.Rout file}
+results_q4c1 = read.table("ps4_q2c-1.Rout", header=TRUE, 
+                          skip=106, nrow=112)
+```
+
+```{r q2c1 table mc est se, echo=FALSE}
+cap = '**Table 4.** *The Monte Carlo estimate and its standard error for each metric and each method when the sigma of y is 0.25 and rho of X is -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75 using future. (Only partial data is shown.).*'
+
+cols = c("Rho","Sigma","Metric","Method","Est","SE")
+
+knitr::kable(results_q4c1[1:17,], caption=cap, col.names=cols,
+             align='l', digits=5)
+```
+
+```{r get the data frame in the ps4_q2c-2.Rout file}
+results_q4c2 = read.table("ps4_q2c-2.Rout", header=TRUE, 
+                          skip=106, nrow=112)
+```
+
+```{r q2c2 table mc est se, echo=FALSE}
+cap = '**Table 5.** *The Monte Carlo estimate and its standard error for each metric and each method when the sigma of y is 0.5 and rho of X is -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75 using future. (Only partial data is shown.).*'
+
+cols = c("Rho","Sigma","Metric","Method","Est","SE")
+
+knitr::kable(results_q4c2[1:17,], caption=cap, col.names=cols,
+             align='l', digits=5)
+```
+
+```{r get the data frame in the ps4_q2c-4.Rout file}
+results_q4c4 = read.table("ps4_q2c-4.Rout", header=TRUE, 
+                          skip=106, nrow=112)
+```
+
+```{r q2c3 table mc est se, echo=FALSE}
+cap = '**Table 6.** *The Monte Carlo estimate and its standard error for each metric and each method when the sigma of y is 1 and rho of X is -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75 using future. (Only partial data is shown.).*'
+
+cols = c("Rho","Sigma","Metric","Method","Est","SE")
+
+knitr::kable(results_q4c4[1:17,], caption=cap, col.names=cols,
+             align='l', digits=5)
+```
+
+\pagebreak
+
+## Question 3
+
+```{r q3 tablec, echo=FALSE}
+ps4_q3c = read.csv("ps4_q3c.csv")
+
+cap_title = '**Table 7.** *The MRI procedures determined by the highest volume, highest total payment and highest average payment in part c.*'
+cap_text0 = 'Each row shows one MRI procedures determined by the criterion.'
+cap = paste(cap_title, cap_text0)
+
+cols = c("HCPCS Description","Volume","Total Payment","Average Payment")
+
+knitr::kable(ps4_q3c, caption=cap, col.names=cols, align='l', 
+             digits=1, format.args = list(big.mark = ','))
+```
+
+```{r q3 tabled, echo=FALSE}
+ps4_q3d = read.csv("ps4_q3d.csv")
+
+cap_title = '**Table 8.** *The MRI procedures determined by the highest volume, highest total payment and highest average payment in part d.*'
+cap_text0 = 'Each row shows one MRI procedures determined by the criterion.'
+cap = paste(cap_title, cap_text0)
+
+cols = c("HCPCS Description","Volume","Total Payment","Average Payment")
+
+knitr::kable(ps4_q3d, caption=cap, col.names=cols, align='l', 
+             digits=1, format.args = list(big.mark = ','))
+```
+
+From the above output tables from "c" and "d", we can see that the results do match.
+
+
