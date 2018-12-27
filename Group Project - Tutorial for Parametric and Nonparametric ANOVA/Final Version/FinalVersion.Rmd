@@ -1,0 +1,516 @@
+---
+title: "Parametric and Non-parametric ANOVA"
+author: "Group 3: Xinye Jiang, Matthew Farr, Thomas Fiore and Hu Sun"
+date: "2018.12.7"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction and Overview
+
+The focus of this tutorial is *analysis of variance (ANOVA)*. ANOVA is a statistical approach to compare means of an outcome variable of interest across different groups. If there are only two groups, the testing problem could simply use a $t$-test. But ANOVA makes it possible to test a multiple null hypothesis that compares several groups simultaneously, which would otherwise be tested by several $t$-tests with larger type I error.
+
+The assumptions for parametric (fixed-effects) ANOVA are:
+
+1. the errors are normally distributed 
+2. the errors have mean 0
+3. the errors are independent
+4. the errors have equal variance among the groups.
+
+A first diagnostic test is to plot the residuals against the predicted responses and against treatment levels. Normality can be checked with a qq-plot as usual. Fortunately, ANOVA works well when the assumptions are nearly satisfied. 
+
+The **parametric** one-way ANOVA has a simple form for $y_{ij}$, the $j$th observed response of group $i$:
+$$
+y_{ij} = u + \mu_i+\epsilon_{ij}
+$$
+where $u$ is the grand mean, each group $i$ has unique group mean $u+\mu_i$, and  $\epsilon_{ij}$ is i.i.d. $N(0,\sigma^2)$. If there is more than one grouping variable, say 2 grouping variables as an example, with the same assumptions, the two-way ANOVA has a slightly more complex form for $y_{ijk}$, the $k$th observed reponse of group $ij$:
+$$
+y_{ijk} = u + \mu_i + \eta_j + \gamma_{ij} + \epsilon_{ijk}
+$$
+where $u$ is again the grand mean, the mean of group $ij$ is $\mu_i + \eta_j + \gamma_{ij}$, and $\epsilon_{ijk}$ is i.i.d.  $N(0,\sigma^2)$. The terms in the mean of group $ij$ can be interpreted as follows: $\mu_i$ is the mean effect of the first grouping variable, $\eta_j$ is the mean effect of the second grouping variable, and the interaction term $\gamma_{ij}$ is "the failure of the response to one factor to be the same at different levels of another factor" (see [PSU site](https://onlinecourses.science.psu.edu/stat500/node/216/)).   ANOVA analysis is simply attributing the grand variations in the outcome variables into the variation caused by the specific group means and the unexplainable random noises. And then ANOVA compares the variations attributable to specific group means and those attributed to the noises and see if the group means are responsible for a relatively large size of the variation.
+
+To do inference for one-way ANOVA, one uses the $F$-statistic for one-way ANOVA:
+$$F=\frac{\text{variation between sample means}}{\text{variation within the samples}}.$$ For more on the $F$-statistic, hypothesis testing, and $p$-values, see this [Minitab Blog entry](http://blog.minitab.com/blog/adventures-in-statistics-2/understanding-analysis-of-variance-anova-and-the-f-test).
+
+Sometimes the assumptions for the parametric ANOVA above are not satisfied, and we could instead turn to a nonparametric counterpart of ANOVA, called *Kruskal-Wallis test*. The Kruskal-Wallis test simply transforms the original outcome variable data into the ranks of the data and then tests whether group mean ranks are different. Based on normality, the parametric ANOVA uses F-test while the Kruskal-Wallis test uses permutation test instead, which typically has more power in non-normal cases. In this tutorial, we would briefly go over one-way ANOVA, two-way ANOVA, and the Kruskal-Wallis test in R, STATA, and MATLAB.
+
+Since the ANOVA could only tell us whether the group means of all groups are different, we still need to identify which groups are actually different by doing multiple comparisons across different group pairs. For ANOVA results, a specific multiple comparison approach could be used, which is called the *Tukey honest significance test*. The test simply compares pairwise group means but just like many other multiple comparison ($p$-value adjustment) methods, it controls for family-wise error rate (FWER).
+We will also demonstrate how to do this post-estimation step in all three languages. For a deeper and detailed introduction to one-way ANOVA and Tukey's HSD, please refer to [this](https://www.spss-tutorials.com/anova-what-is-it/#assumptions). For two-way ANOVA, the tutorial at Penn State [here](https://onlinecourses.science.psu.edu/stat500/node/216/) is helpful. And for Kruskal-Wallis test, refer to Section 6.1 in book *Nonparametric Statistical Methods* by Hollander and Wolfe for a more theoretical treatment.
+
+## Data Summary
+
+The data set we use for the illustration is the **diet** data, which is a small survey of several male and female adults who take on three different diet plans. And the focus of the survey is people's body weight changes during a six-week time period. A link to the data is [here](https://www.sheffield.ac.uk/mash/statistics2/anova). 
+The self-descriptive variables of interest are the response variable weightloss, and the two grouping factors diet and gender. For ANOVA, we are considering the mean of weightloss because of gender, diet, and lastly because of the effect of diet according to gender (or vice-a-versa).
+
+```{r, echo=FALSE}
+data_summary = data.frame(
+  variables = c("weightloss", "diet", "gender"),
+  description = c("weight loss in kg", "diet type", "gender"),
+  type = c("numeric", "categorical", "categorical"))
+
+cols = c("Variables of Interest", "Description", "Data type")
+
+knitr::kable(data_summary, align='l', col.names = cols)
+```
+
+In the R, STATA, and MATLAB tutorials below, we first do a one-way ANOVA for weight loss for only females and for only males across the three diets and make a graph that shows the confidence intervals (adjusted for multicomparisons) for the three weight loss group means. Next we do two-way ANOVA for weight loss for the whole dataset across the three diets and gender. Finally, we again do the initial task of one-way ANOVA for weight loss for only females and for only males across the three diets, but use the Kruskal-Wallis test instead of parametric ANOVA.
+
+The most important commands are aov() in R, anova in Stata, and multcompare in MATLAB.  
+
+
+# Tutorials
+
+#{.tabset .tabset-fade}
+
+## R
+
+### Data Processing
+
+First we want to load the dataset into R and omit any missing values using `read.csv()` and `na.omit()`.
+
+```{r}
+diet.R = read.csv("./Diet.csv", header = TRUE)
+diet.R = na.omit(diet.R)
+```
+
+The `na.omit()` omitted two data points, Person 25 and 26. These points were missing the value for their gender. 
+
+Then we need to tell R that Diet and gender are factors by using `as.factor()` and `factor()`.
+
+```{r}
+diet.R$Diet = as.factor(diet.R$Diet)
+diet.R$gender = factor(diet.R$gender,c(0,1))
+```
+
+Then we need to create the variable of interest 'weightlost'.
+
+```{r}
+diet.R$weightlost = diet.R$pre.weight - diet.R$weight6weeks
+```
+
+```{r}
+summary(diet.R)
+```
+
+Here is a quick summary of our dataset so you can see what variables are in the dataset and have a brief summary of those variables. 
+
+We then split the dataset into subsets by 'gender' using `subset()` so we can have separate datasets for the female and male data.
+
+```{r}
+Diet.female = subset(diet.R, gender==0)
+Diet.male = subset(diet.R, gender==1)
+```
+
+Now that we have all the setup work done we can move on to our ANOVA analysis.
+
+### Parametric ANOVA
+
+#### Parametric One-Way ANOVA
+
+To create our ANOVA model we use 'Diet' as the grouping variable and use `aov()` to create our parametric one-way ANOVA model for the female dataset. We can then use `summary()` to analyze this model.
+
+```{r}
+anovaFemale = aov(weightlost~Diet, data = Diet.female)
+summary(anovaFemale)
+```
+
+From the above output of the parametric one-way ANOVA for the female dataset, we can see that the p-value is much smaller than 0.05 so we conclude that there is at least one group that is statistically different from the other groups in the female dataset.
+
+In order to check which group is statistically different, we run the Tukey post hoc test for pairwise comparison following a one-way ANOVA using `TukeyHSD()`. 
+
+```{r}
+TukeyHSD(anovaFemale)
+```
+
+From the above result we can see that there is a statistically significant difference in weight loss between the 'Diet 3' group and the 'Diet 1' group and between the 'Diet 3' group and the 'Diet 2' group. Because of this we can determine that the 'Diet 3' group is statistically different from the other two groups. 
+
+Now let's do the same thing for the male dataset.
+
+```{r}
+anovaMale = aov(weightlost~Diet, data = Diet.male)
+summary(anovaMale)
+```
+
+From the above output of the parametric one-way ANOVA for the male dataset, we can see that the p-value is larger than 0.05 so we fail to reject the null hypothesis.
+
+Let's confirm this by looking at the Tukey post hoc test.
+
+```{r}
+TukeyHSD(anovaMale)
+```
+
+As you can see there is no statistically significant difference between the three groups in the male dataset.
+
+The following plots help visualize these two Tukey post hoc tests. Here is the plot for the female data. 
+
+```{r}
+library(gplots)
+plotmeans(weightlost~Diet, data = Diet.female)
+```
+
+And here is the plot for the male data.
+
+```{r}
+plotmeans(weightlost~Diet, data = Diet.male)
+```
+
+For both of these plots `n` is the number of people that participated in each Diet.
+
+#### Parametric Two-Way ANOVA
+
+A similar way we could analysis this data is to do parametric two-way ANOVA for the whole dataset. For this we still use `aov()` but now we regard 'gender' and 'Diet as two grouping variables. And to analysis the model we will use `Anova()` and we want it to be a Type III Sums of Squares ANOVA.
+
+```{r}
+library(car)
+anova2 = aov(weightlost~gender*Diet,data=diet.R)
+Anova(anova2,type = "III")
+```
+
+The gender:Diet interaction is statistically significant at the p = 0.04884 level. There was no statistically significant difference in weight loss between gender (p = 0.77854), but there were statistically significant differences between Diet groups (p = 0.01304).
+
+### Nonparametric ANOVA: Kruskal-Wallis Test
+
+Now let's look at Nonparametric ANOVA using the Kruskal-Wallis Test. We regard 'Diet' as the grouping variable and use `kruskal.test()` to do nonparametric one-way ANOVA, i.e. Kruskal-Wallis test for the female data.
+
+```{r}
+kruskal.test(weightlost~Diet, data = Diet.female)
+```
+
+We get a p-value that is much smaller than 0.05 so we can reject the null hypothesis and conclude that there is at least one group statistically different from the other groups in the female dataset. This is the same conclusion we got in the parametric one-way ANOVA for the female data.
+
+Now we do the same thing for the male dataset.
+
+```{r}
+kruskal.test(weightlost~Diet, data = Diet.male)
+```
+
+We get a p-value that is larger than 0.05 so there is no statistically significant difference in weight loss between the three groups in the male dataset. This is the same result we got from the parametric one-way ANOVA for the male data.
+
+### Conclusion
+
+Finally, after all of this analysis we can conclude that for this dataset that you can either analyze the data using either parametric or nonparametric ANOVA and receive the same results. Our conclusion is that one group, the Diet 3 group, had a significant difference in weight loss compared to the other groups in the female dataset. However, for the male dataset there was no significant difference in weight loss between the different Diet groups. 
+
+## STATA
+
+### Data Processing
+
+Firstly, we load the dataset into Stata by using `import delimited`.
+
+```{r eval=FALSE}
+import delimited Diet.csv
+```
+
+To observe the data preliminarily, we check the summary of data by using `summarize`.
+
+```{r eval=FALSE}
+summarize
+```
+![](dietsummary.png)
+
+All variables seem reasonable except 'gender'. Its abnormal summary probably is due to missing data. So we take a deeper look at the variable 'gender' by viewing the first ten rows of the data using `list`.
+
+```{r eval=FALSE}
+list gender in 1/10
+```
+![](gender.png)
+
+The variable 'gender' does have missing values. We delete those observations with missing values in 'gender' by `drop if` and change 'gender' from string to numeric by using `destring` (pass the `replace` option in order to overwrite an existing file).
+
+```{r eval=FALSE}
+drop if gender == " "
+destring gender, replace
+```
+
+Now the observations with missing values are removed. Then we generate the variable of interest 'weightloss' by `generate`. We only keep those variables that we need by `keep` and save the processed dataset by `save` as we will use it later. Note that in Stata, only a single dataset can be opened at a time. As we want to operate on multiple datasets, we need to switch between them from time to time. So it is important that we save the data with `save` and load the data with `use` (pass the `clear` option to remove the existing data as Stata will refuse if you try and open a new dataset with unsaved changes in the existing data).
+
+```{r eval=FALSE}
+* Generate the variable 'weightloss'
+generate weightloss = preweight - weight6weeks
+* Keep only the needed variables and save the dataset
+keep gender diet weightloss
+save diet.dta
+```
+
+We divide the dataset by 'gender' using `keep if` and save the male data and female data as two separate datasets. 
+
+```{r eval=FALSE}
+keep if gender == 0
+save diet_female.dta
+use diet.dta, clear
+keep if gender == 1
+save diet_male.dta
+```
+
+### Parametric ANOVA
+
+#### Parametric One-Way ANOVA
+
+We regard 'diet' as the grouping variable and use the `anova` command to do parametric one-way ANOVA for the female data.
+
+```{r eval=FALSE}
+use diet_female.dta, clear
+anova weightloss diet
+```
+![](onewayanovafemale.png)
+
+To help visualize the test for the female data, use the `anovaplot` command following the one-way ANOVA. Note that to use the `anovaplot` command, we should run `ssc install modeldiag` first to load the corresponding package.
+
+```{r eval=FALSE}
+* ssc install modeldiag
+anovaplot
+```
+![](onewayanovaf.png)
+
+From the above outputs of parametric one-way ANOVA for the female data, we can see that the p-value is much smaller than 0.05 . So we should reject the null hypothesis and conclude that there is at least one group statistically different from other groups in females. 
+
+In order to check that which group is statistically different, we run the Tukey post hoc test for pairwise comparison following a one-way ANOVA using `pwmean DependentVar, over(IndependentVar), mcompare(tukey) effects`.
+
+```{r eval=FALSE}
+pwmean weightloss, over(diet) mcompare(tukey) effects
+```
+![](onewaypairwisefemale.png)
+
+From the result above, we can see that there is a statistically significant difference in weight loss between the 'diet 3' group & 'diet 1' group and 'diet 3' group & 'diet 2' group in females. The 'diet 3' group is statistically different from other two groups. 
+
+Do the same things for the male data.
+
+```{r eval=FALSE}
+* Parametric one-way ANOVA for male data
+* Regard 'diet' as the grouping variable
+use diet_male.dta, clear
+anova weightloss diet
+```
+![](onewayanovamale.png)
+
+```{r eval=FALSE}
+* To visualize the test
+anovaplot
+```
+![](onewayanovam.png)
+
+From the above output of the parametric one-way ANOVA for the male dataset, we can see that the p-value is much larger than 0.05 , so we fail to reject the null hypothesis.
+
+Let's confirm this by running the Tukey post hoc test for pairwise comparison following a one-way ANOVA.
+
+```{r eval=FALSE}
+* Run the Tukey post hoc test for pairwise comparison
+pwmean weightloss, over(diet) mcompare(tukey) effects
+```
+![](onewaypairwisemale.png)
+
+The results indicate that there is no statistically significant difference in weight loss among the three diet groups in males.
+
+#### Parametric Two-Way ANOVA
+
+We could also use the `anova` command to do parametric two-way ANOVA for the whole dataset. Now we regard 'gender' and 'diet' as two grouping variables. 
+
+```{r eval=FALSE}
+use diet.dta, clear
+anova weightloss i.gender##i.diet
+```
+![](twowayanova1.png)
+
+To help visualize the test for the whole dataset, use the `anovaplot` command again. Here type out the variable names following `anovaplot` to confirm the order of predictors for better effect of the plot.
+
+```{r eval=FALSE}
+anovaplot diet gender
+```
+![](twowayanova2.png)
+
+The gender#diet interaction is statistically significant at the p = 0.0488 level. There was no statistically significant difference in weight loss between gender (p = 0.7785), but there were statistically significant differences between diet groups (p = 0.0130).
+
+### Nonparametric ANOVA: Kruskal-Wallis Test
+
+We regard 'diet' as the grouping variable and use the `kwallis` command to do nonparametric one-way ANOVA, i.e. Kruskal-Wallis test for the female data. 
+
+```{r eval=FALSE}
+use diet_female.dta, clear
+kwallis weightloss, by(diet)
+```
+![](kwallisfemale.png)
+
+We get a p-value much smaller than 0.05 . So we reject the null hypothesis and get the conclusion that there is at least one group statistically different from other groups in females, which is the same as what we get in parametric one-way anova for the female data.
+
+Now we do the same thing for the male data. 
+
+```{r eval=FALSE}
+use diet_male.dta, clear
+kwallis weightloss, by(diet)
+```
+![](kwallismale.png)
+
+We get a p-value much larger than 0.05 . The results indicate that there is no statistically significant difference in weight loss among the three diet groups in males, which is also the same as what we get in parametric one-way anova for the male data. 
+
+### Conclusion
+
+In summary, we conclude that for one-way parametric and nonparametric ANOVA, there is some difference in weight loss of females and no statistically significant difference in weight loss of males among the three diet groups for the "diet" data. And for two-way parametric ANOVA, the interaction between 'gender' and 'diet' is statistically significant. There was no statistically significant difference in weight loss between gender, but there were statistically significant differences between diet groups.
+
+
+## MATLAB
+
+### Data Processing
+
+Firstly, we load the data into the working space and convert the data into the type `dataset`, remove the observations with missing value, create the dependent variable of interest and take a brief look at the data:
+
+```{r eval=FALSE}
+% import dataset
+filename = 'Diet.csv';
+Diet = readtable(filename);
+Diet = table2dataset(Diet);
+
+% remove missing values
+diet_miss = ismissing(Diet);
+Diet = Diet(~any(diet_miss,2),:);
+
+% Dependent variable of interest:
+Diet.weightloss = Diet.pre_weight - Diet.weight6weeks;
+
+% first 5 rows of the data:
+Diet(1:5,:)
+  
+```
+![](diethead_MATLAB.png)
+
+Please note that in MALTAB, the basic data form is array, which cannot be operated upon as the way dataset is operated, so we need to transform the data table into dataset object. And using `ismissing` to generate a 0-1 matrix of missing value indicator for each data cell in the dataset. And then using negation `~` to drop those missing observations.
+
+In MATLAB, after we import a dataset, we simply call for the column of it by `.` operator. And to subset the data, we could either use the column index as we do above, or we could use `Diet(,'gender')` to refer to columns.
+
+Because we want to conduct ANOVA analysis and firstly, we want to analyze the data under the categorical variable **diet**, and in the second step we are going to analyze the data under grouping variables **gender** and **diet**, so we need to subset the full sample into female and male subsamples for the first-step analysis:
+
+```{r eval=FALSE}
+% Subset of data under each gender
+Diet_female = Diet(Diet.gender==0,:);
+Diet_male = Diet(Diet.gender==1,:);
+```
+
+
+### Parametric ANOVA
+
+#### Parametric One-Way ANOVA
+
+Firstly, for both female and male subsamples, we carry out one-way ANOVA analysis, which aims at identifying whether different diet plans lead to dispersed weightloss performances, and in MATLAB, we simply use `anova1` command to indicate **one**-way anova:
+
+```{r eval=FALSE}
+[p_fe_aov,table_fe_aov,stats_fe_aov] = anova1(Diet_female.weightloss,Diet_female.Diet);
+```
+
+In `anova1` command, just as many other MATLAB commands, the output(things on the left hand side) could be multidimensional. and each of the output could either be a value, a vector, a structure object, a table and many others. Here the *p_fe_aov* is the p-value of the ANOVA, *table_fe_aov* is the ANOVA result table, and the *stats_fe_aov* is a structure object storing relevant statistics for the dataset being analyzed, which is used for post-estimation command.
+
+The result of the previous one-way anova is:
+
+![](onewayanovafemale_MATLAB.png)
+
+To see which group is actually different and lead to such a small p-value, we use the Tukey method to do pairwise-comparison and p-value adjustment by using the `multcompare` command upon the *stats_fe_aov* object, which is used specifically for the postestimation command here:
+
+```{r eval=FALSE}
+[c_fe_aov,m_fe_aov,h_fe_aov,gnames] = multcompare(stats_fe_aov)
+```
+
+Here the output on the left is just some miscellaneous test statistic tables and p-values vectors which we would not go into details here. A confidence interval graph will automatically pop out if we run the command:
+
+![](onewaypairwisefemale_MATLAB.png)
+
+The y-axis is the indicator variable `diet`, and the x-axis represents the group-average weightloss. Here we could see that the females taking on diet plan 3 is statistically different from the other two groups. To see it more clearly, we could take a look at the *c_fe_aov* object, which contains the pair-wise comparison statistics:
+
+![](pairwise_female_MATLAB.png)
+
+Here we could see that the pairwise comparison between group 1 and 3 and the comparison between group 2 and 3 are both significant, so group 3 is statistically different from the other groups.
+
+
+We did exactly the same on the male subsample and get:
+
+```{r eval=FALSE}
+[p_ma_aov,table_ma_aov,stats_ma_aov] = anova1(Diet_male.weightloss,Diet_male.Diet);
+
+[c_ma_aov,m_ma_aov,h_ma_aov,gnames] = multcompare(stats_ma_aov)
+
+```
+
+![](onewayanovamale_MATLAB.png)
+
+![](onewaypairwisemale_MATLAB.png)
+
+
+#### Parametric Two-Way ANOVA
+
+To analyze the full sample, we could also do a two-way anova, which simply takes on two grouping variables, and in MATLAB, the `anovan` command could be used for general multi-anova(MANOVA) problem:
+
+```{r eval=FALSE}
+[p_full,table_full,stats_full] = anovan(Diet.weightloss,{Diet.gender Diet.Diet},'model','interaction','varnames',{'gender' 'diet type'});
+
+[c_full,m_full,h_full,gnames] = multcompare(stats_full,'Dimension',[1 2])
+
+```
+
+To briefly the two commands, the `anovan` function takes on the dependent variable, the grouping variables vector, and with a few options. A lot of MATLAB functions include options via so-called **key-value** pairs. Here the two options are:
+
+*('model','interaction'): set the ANOVA model to include interaction effect of the two grouping variables
+
+*('varnames',{'gender','diet type'}): reset the label of the variables in the ANOVA table
+
+And in the `multcompare` command, there is another option which just indicates that the grouping variables are 2-dimensional. We could also add a key-value pair **('ctype','scheffe'/'bonferroni')** to change the p-value adjustment method to scheffe method and bonferroni method. The default is Tukey honestly significant difference criterion, which is exactly what we want.
+
+The results are intuitive:
+
+![](twowayanova_MATLAB.png)
+
+![](twowaypairwise_MATLAB.png)
+
+It shows that only the female group taking on diet plan 3 is causing the overall difference, which is sort of equivalent to the two one-way anova's results combined.
+
+### Nonparametric ANOVA: Kruskal-Wallis Test
+
+To get a more robust hypothesis test of the female and male subsamples, we could simply do the one-way anova test in a non-parametric way using the kruskal-wallis test where we simply implement it by `kruskalwallis()` function:
+
+```{r eval=FALSE}
+[p_fe_kw,table_fe_kw,stats_fe_kw] = kruskalwallis(Diet_female.weightloss,Diet_female.Diet)
+[p_ma_kw,table_ma_kw,stats_ma_kw] = kruskalwallis(Diet_male.weightloss,Diet_male.Diet)
+```
+
+The `kruskalwallis()` function works in the same manner as `anova1` which only asks the outcome variable and the grouping variable, the result is resonating that in parametric ANOVA. For female subsample:
+
+![](kwallisfemale_MATLAB.png)
+
+And for male subsample:
+
+![](kwallismale_MATLAB.png)
+
+And the multicomparison works in the same way:
+
+```{r eval=FALSE}
+[c_full,m_full,h_full,gnames] = multcompare(stats_fe_kw)
+[c_full,m_full,h_full,gnames] = multcompare(stats_ma_kw)
+```
+
+Result for female subsample:
+
+![](kwallisfemalepairwise_MATLAB.png)
+
+Result for male subsample:
+
+![](kwallismalepairwise_MATLAB.png)
+
+The conclusion from non-parametric test is exactly the same as that in parametric test.
+
+### Conclusion
+
+In general, the analysis in MATLAB on the diet dataset yields exactly the same result as the other two examples in STATA and R. We have found significant differences in females' different diet groups but do not observe a similar pattern for males. And furthermore, when we consider the full dataset, it seems that the group that stands out is still the female group that makes the difference in the female subsample. The result holds for both parametric ANOVA and Kruskal-Wallis test.
+
+# Things to Consider
+
+The parametric ANOVA is powerful and has several post estimation commands for further analysis. But before doing the parametric ANOVA, especially when working with a dataset with small sample size, we need to carefully check the assumptions of ANOVA. Specifically, we should check whether data in each group follows normal distribution using Kolmogorov-Smirnov test and also test whether the variances of data are equal across groups by doing Levene test.
+
+The other thing to consider is how to do pairwise comparisons for Kruskal-Wallis test. We could do pairwise Wilcoxon rank sum test for each group pair, but it seems unclear to us how to adjust the p-value to control for the overall FWER. The Tukey HSD applied to the parametric ANOVA object seems not applicable to Kruskal-Wallis since it requires the same parametric assumptions as those in parametric ANOVA.
+
+
+# References
+1. [SPSS Tutorial: ANOVA - Simple Introduction](https://www.spss-tutorials.com/anova-what-is-it)
+
+2. [Pennsylvania State University Online Course Statistics 500: Applied Statistics](https://onlinecourses.science.psu.edu/stat500/node/216/) [see Section 11.2]
+
+3. Myles Hollander and Douglas A. Wolfe. *Nonparametric Statistical Methods*, Wiley Series in Probability and Statistics, 1999. [see Section 6.1]
+
+4. Paul Teetor. *R Cookbook*, O'Reilly Media, 2011. [See Sections 11.20, 11.23]
