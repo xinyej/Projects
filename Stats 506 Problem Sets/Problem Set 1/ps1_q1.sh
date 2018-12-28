@@ -5,7 +5,7 @@
 ## This is a shell script meant to illustrate some contents of
 ## the 2015 Residential Energy Consumption Survey data set.
 ##
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: September 30, 2018
 
 # Part A,i. Count the number of rows for region 3:
