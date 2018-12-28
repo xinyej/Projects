@@ -7,7 +7,7 @@
 * Data: recs2015_public_v3.csv
 *   imported from the working directory
 * 
-* Author: Xinye Jiang (xinyej@umich.edu)
+* Author: Xinye Jiang
 * Updated: October 16, 2018
 * ---------------------------------------------------------------------------- *
 
