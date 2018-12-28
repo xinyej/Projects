@@ -3,7 +3,7 @@
 ## This is an R script that shows an SQL query to construct a table 
 ## showing the all-time leader in hits for each birth country.
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: December 10, 2018
 
 # 80:  -------------------------------------------------------------------------
