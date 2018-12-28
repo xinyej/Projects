@@ -3,7 +3,7 @@
 ## This is an R script meant to design a Monte Carlo study to compare the
 ## performance of different methods that adjust for multiple comparisons. 
 ##
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: November 17, 2018
 
 # 80:  -------------------------------------------------------------------------
