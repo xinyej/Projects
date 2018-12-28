@@ -3,7 +3,7 @@
 ## This is an R script meant to illustrate some contents about the
 ## 2015 Residential Energy Consumption Survey (RECS 2015) data set.
 ##
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: November 3, 2018
 
 # 80:  -------------------------------------------------------------------------
