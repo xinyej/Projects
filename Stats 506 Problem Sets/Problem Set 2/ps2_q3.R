@@ -4,7 +4,7 @@
 ## the important predictors of whether people lose their primary 
 ## upper right 2nd bicuspid (ur2b).
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: October 15, 2018
 
 # 80:  -------------------------------------------------------------------------
