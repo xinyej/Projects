@@ -4,7 +4,7 @@ SAS Script for Question 3 in Problem Set 4
 This is a SAS Script that does some data processing and analyzing work 
 regarding the 2016 Medicare Provider Utilization and Payment data.
 
-Author: Xinye Jiang (xinyej@umich.edu)
+Author: Xinye Jiang
 Updated: December 10, 2018
  *****************************************************
 */
