@@ -2,7 +2,7 @@
 ##
 ## This is an R script that uses 'future' package for parallelism.
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: December 10, 2018
 
 # 80:  -------------------------------------------------------------------------
