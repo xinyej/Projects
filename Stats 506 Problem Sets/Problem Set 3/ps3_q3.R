@@ -2,7 +2,7 @@
 ##
 ## This is an R script meant to translating an analysis from Stata into R.
 ##
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: November 17, 2018
 
 # 80:  -------------------------------------------------------------------------
