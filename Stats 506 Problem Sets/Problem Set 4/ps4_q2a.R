@@ -2,7 +2,7 @@
 ##
 ## This is an R script that uses 'mclapply' to run parallel simulations. 
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: December 9, 2018
 
 # 80:  -------------------------------------------------------------------------
