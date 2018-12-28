@@ -7,7 +7,7 @@
 * Data: OHX_D.XPT, DEMO_D.XPT
 *   imported from the working directory
 * 
-* Author: Xinye Jiang (xinyej@umich.edu)
+* Author: Xinye Jiang
 * Updated: October 15, 2018
 * ---------------------------------------------------------------------------- *
 
