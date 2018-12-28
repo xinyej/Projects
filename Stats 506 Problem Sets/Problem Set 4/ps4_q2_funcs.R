@@ -3,7 +3,7 @@
 ## This is an R script that includes the functions from  
 ## part a and c of PS3 Q2.
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: December 9, 2018
 
 # 80:  -------------------------------------------------------------------------
