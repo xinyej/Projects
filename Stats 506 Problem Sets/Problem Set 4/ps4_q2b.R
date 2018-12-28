@@ -3,7 +3,7 @@
 ## This is an R script that uses 'doParallel' and nested foreach
 ## loops to run simulations. 
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: December 10, 2018
 
 # 80:  -------------------------------------------------------------------------
