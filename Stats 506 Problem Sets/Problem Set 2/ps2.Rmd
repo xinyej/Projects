@@ -1,6 +1,6 @@
 ---
 title: "Stats 506, F18, Problem Set 2"
-author: "Xinye Jiang (xinyej@umich.edu)"
+author: "Xinye Jiang"
 date: "October 16, 2018"
 output: pdf_document
 ---
