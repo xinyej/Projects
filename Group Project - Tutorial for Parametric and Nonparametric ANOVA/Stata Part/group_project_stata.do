@@ -7,7 +7,7 @@
 * Data: Diet.csv
 *   imported from the working directory
 * 
-* Author: Xinye Jiang (xinyej@umich.edu)
+* Author: Xinye Jiang
 * Updated: November 22, 2018
 * ---------------------------------------------------------------------------- *
 
