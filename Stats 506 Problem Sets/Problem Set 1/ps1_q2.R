@@ -3,7 +3,7 @@
 ## This is an R script meant to illustrate some contents about
 ## flights originating in New York City, NY (NYC) in 2013 and 2014.
 ## 
-## Author: Xinye Jiang (xinyej@umich.edu)
+## Author: Xinye Jiang
 ## Updated: September 30, 2018
 
 # 80:  -------------------------------------------------------------------------
