@@ -1,2 +1,5 @@
 # Project - Medication Effectiveness Analysis (Nonparametric)
-Some documents regarding the medication Effectiveness Analysis Project, by Xinye.
+
+Applied non-parametric statistical analysis to determine the effectiveness of a medication at reducing allergic symptoms.
+
+Author: Xinye Jiang
