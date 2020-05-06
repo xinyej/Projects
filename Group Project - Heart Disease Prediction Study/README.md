@@ -1,4 +1,4 @@
-# Heart Disease Project
+# Heart Disease Prediction Study
 
 Author: Xun Wang, Xinye Jiang, Chen Xie
 
