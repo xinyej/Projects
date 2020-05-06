@@ -1,8 +1,6 @@
-# Project: Default of credit card clients Data Set 
+# Project: Gesture Recognition Analysis
 
 Author: Chen Xie, Xun Wang, Xinye Jiang
-
-This is a class project. 
 
 Data:
 
