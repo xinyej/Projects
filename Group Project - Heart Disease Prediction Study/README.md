@@ -1,11 +1,7 @@
-### Heart Disease Project
-#### Author: Xun Wang, Xinye Jiang, Chen Xie
+# Heart Disease Project
 
-R codes: HeartDisease_Rcodes.Rmd
+Author: Xun Wang, Xinye Jiang, Chen Xie
 
-Report: HeartDisease.Rmd
+R codes: HeartDisease.Rmd
 
-Stans:
-
-STATS551_project1.stan
-STATS551_project2.stan
+Stans: STATS551_project1.stan; STATS551_project2.stan
