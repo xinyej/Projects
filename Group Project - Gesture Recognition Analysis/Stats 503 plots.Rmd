@@ -1,0 +1,119 @@
+---
+title: "Project503_plot"
+author: "Xinye Jiang"
+date: "2019/4/27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, out.height="45%",fig.cap="Barchart of Gestures and Scatterplot of Sensor 2 and Sensor 7 from Reading 1",fig.show='hold',fig.align='center'}
+## Barchart of response variable
+#png('response_barchart.png')
+g1=ggplot(as.data.frame(table(as.factor(g$V65))),aes(x=Var1,fill=Var1,y=Freq))+
+  geom_bar(stat = "identity")+
+  geom_text(aes(label=Freq,x=Var1), vjust=1.6, 
+            color="white", size=3.5)+
+  labs(title = "Frequency of Gestures", x = "Gestures", y = "Frequency") +
+  scale_fill_discrete(name="Gesture")+
+  theme_classic()
+#dev.off()
+
+## Scatterplot
+g2=ggplot(g, aes(x=g[,2],y=g[,7], color=g[,65]))+
+  geom_point()+
+  scale_color_discrete(name="Gesture")+
+  labs(x='reading 1 sensor 2 ',y='reading 1 sensor 7', title='Scatterplot of Two Sensors in R1')
+
+grid.arrange(g1,g2,ncol=2,heights=1/2)
+```
+
+```{r, eval=FALSE}
+## Scatterplots
+png('scatterplot_1.png')
+ggplot(g, aes(x=g[,15],y=g[,7], color=g[,65]))+
+  geom_point()+
+  scale_color_discrete(name="Gesture")+
+  labs(x='reading 2 sensor 7 ',y='reading 1 sensor 7', title='Scatterplot of two readings for the same sensor')
+dev.off()
+
+png('scatterplot_2.png')
+ggplot(g, aes(x=g[,2],y=g[,7], color=g[,65]))+
+  geom_point()+
+  scale_color_discrete(name="Gesture")+
+  labs(x='reading 1 sensor 2 ',y='reading 1 sensor 7', title='Scatterplot of two sensor for the same reading')
+dev.off()
+```
+
+```{r, eval=FALSE}
+## Plots of Correlation
+ggplot(data = melt(cor(g[,-65])), aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1))+
+  labs(x='',y='',title='Correlation (Overview)')
+
+ggplot(data = melt(cor(g[,1:16])), aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1))+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 8 + 0.5, ymin = 1 - 0.5, ymax = 8 + 0.5),
+            fill = "transparent", color = "grey", size = 1.5)+  
+  geom_rect(aes(xmin = 9 - 0.5, xmax = 16 + 0.5, ymin = 9 - 0.5, ymax = 16 + 0.5),
+            fill = "transparent", color = "grey", size = 1.5)+
+  geom_rect(aes(xmin = 3 - 0.5, xmax = 3 + 0.5, ymin = 4 - 0.5, ymax = 4 + 0.5),
+            fill = "transparent", color = "darkred", size = 1)+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 1 + 0.5, ymin = 9 - 0.5, ymax = 9 + 0.5),
+            fill = "transparent", color = "blue", size = 1)+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 4 + 0.5, ymin = 1 - 0.5, ymax = 4 + 0.5),
+            fill = "transparent", color = "orange", size = 0.5)+
+  geom_rect(aes(xmin = 5 - 0.5, xmax = 8 + 0.5, ymin = 5 - 0.5, ymax = 8 + 0.5),
+            fill = "transparent", color = "orange", size = 0.5)+
+  labs(x='',y='',title='Correlation of First Two Readings')
+
+sensors_order=c(seq(1,64,by=8),seq(2,64,by=8),seq(3,64,by=8),seq(4,64,by=8),seq(5,64,by=8),seq(6,64,by=8),seq(7,64,by=8),seq(8,64,by=8))
+
+ggplot(data = melt(cor(g[,sensors_order])), aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 12, hjust = 1))+
+  labs(x='',y='',title='Correlation (In Sensors Order)')+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 32 + 0.5, ymin = 1 - 0.5, ymax = 32 + 0.5),
+            fill = "transparent", color = "lightblue", size = 0.5)+  
+  geom_rect(aes(xmin = 33 - 0.5, xmax = 64 + 0.5, ymin =33 - 0.5, ymax = 64+ 0.5),
+            fill = "transparent", color = "lightblue", size = 0.5)+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 8 + 0.5, ymin =1 - 0.5, ymax = 8 + 0.5),
+            fill = "transparent", color = "grey", size = .5)+
+  geom_rect(aes(xmin = 1 - 0.5, xmax = 8 + 0.5, ymin =9- 0.5, ymax = 16 + 0.5),
+            fill = "transparent", color = "orange", size = .5)
+```
+
+```{r, out.height='50%', out.width='50%', eval=FALSE}
+## Histograms of reading 1 of sensor 1 and sensor 7
+ggplots2=list()
+for (i in c(1,7)){
+  p=ggplot(g, aes(x=g[,i],color=V65)) +
+  geom_density()+
+  labs(title=sprintf('Density of reading %s sensor %s',  ifelse(i%%8!=0,i%/%8+1,i/8), ifelse(i%%8!=0,i%%8,8) ) , x='Sensor',y='')+
+  scale_colour_discrete(name="Gesture")+
+  theme_classic()
+  ggplots2[[i]]=p
+}
+
+for (i in c(1,7)) {
+#  png(sprintf('r1sensor%s.png',i))
+  print(ggplots2[[i]])
+#  dev.off()
+}
+```
+
+
+
