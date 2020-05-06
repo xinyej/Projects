@@ -2,6 +2,4 @@
 
 Author: Xun Wang, Xinye Jiang, Chen Xie
 
-R code: HeartDisease.Rmd
-
-Stans: STATS551_project1.stan; STATS551_project2.stan
+Data Source: The dataset is from UCI Machine Learning Repository.
