@@ -1,4 +1,4 @@
-# Project: Gesture Recognition Analysis
+# Gesture Recognition Analysis
 
 Author: Chen Xie, Xun Wang, Xinye Jiang
 
