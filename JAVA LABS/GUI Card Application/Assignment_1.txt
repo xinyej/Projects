@@ -1,0 +1,296 @@
+/* Xinye Jiang (20477351) Solution
+ * Assignment #1
+ * Description: Set up the CardIdentity, Card, Hand classes, and test run
+ * Date: 06/30/2021
+ */
+
+public class Foothill
+{
+   public static void main(String[] args)
+   {
+      // Phase 1: test of Card class
+      System.out.printf("Phase 1: test of Card class\n\n");
+      
+      Card card1 = new Card();
+      Card card2 = new Card('X', CardIdentity.Suit.diamonds);
+      Card card3 = new Card('J', CardIdentity.Suit.clubs);
+      
+      System.out.printf("Instantiate three cards:\n" + card1 + "\n" 
+            + card2 + "\n" + card3 + "\n\n");
+      
+      card1.set('Y', CardIdentity.Suit.diamonds);
+      card2.set('Q', CardIdentity.Suit.spades);
+      
+      System.out.printf("After setting a good card bad and a bad card "
+            + "good:\n" + card1 + "\n" + card2 + "\n" + card3 + "\n\n");
+      
+      // Phase 2: test of Hand class
+      System.out.printf("Phase 2: test of Hand class\n\n");
+      
+      Card cardTest1 = new Card('3', CardIdentity.Suit.clubs);
+      Card cardTest2 = new Card('T', CardIdentity.Suit.clubs);
+      Card cardTest3 = new Card('9', CardIdentity.Suit.hearts);
+      Hand hand = new Hand();
+      
+      while(hand.getNumCards() < Hand.MAX_CARDS)
+      {
+         hand.takeCard(cardTest1);
+         hand.takeCard(cardTest2);
+         hand.takeCard(cardTest3);
+      }
+      
+      System.out.printf("Hand full\nAfter deal\n" + hand.toString() + "\n\n");
+      
+      System.out.printf("Testing inspectCard()\n" + hand.inspectCard(2) + 
+            "\n" + hand.inspectCard(35) + "\n\n");
+      
+      while(hand.getNumCards() > 0)
+      {
+         System.out.println("Playing " + hand.playCard());
+      }
+      
+      System.out.printf("\nAfter playing all cards\n" + hand.toString());
+   } 
+}
+
+class CardIdentity
+{
+   public enum Suit {clubs, diamonds, hearts, spades}
+   
+   private char value;
+   private Suit suit;
+   
+   protected static final char DEFAULT_VALUE = 'A';
+   protected static final Suit DEFAULT_SUIT = Suit.spades;
+   private static final char[] LEGAL_VALUES = {'A', 'K', 'Q', 'J', 'T', 
+         '2', '3', '4', '5', '6', '7', '8', '9'};  
+   
+   public CardIdentity()
+   {
+      this.value = DEFAULT_VALUE;
+      this.suit = DEFAULT_SUIT;
+   }
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isValidInput = isValid(value, suit);
+      if(isValidInput)
+      {
+         this.value = value;
+         this.suit = suit;
+      }
+      return isValidInput;
+   }
+   
+   public Suit getSuit()
+   {
+      return this.suit;
+   }
+   
+   public char getValue()
+   {
+      return this.value;
+   }
+
+   private static boolean isValid(char value, Suit suit)
+   {
+      // If value not in LEGAL_VALUES, return false
+      for(char legalValue: LEGAL_VALUES)
+      {
+         if(value == legalValue)
+            return true;
+      }
+      return false;
+   }  
+}
+
+class Card extends CardIdentity
+{
+   private boolean cardError;
+   
+   private static final boolean DEFAULT_CARD_ERROR = false;
+   
+   public Card()
+   {
+      super();
+      this.cardError = DEFAULT_CARD_ERROR;
+   }
+   
+   public Card(char value, Suit suit)
+   {
+      boolean setSuccess = set(value, suit);
+      if(!setSuccess)
+      {
+         set(CardIdentity.DEFAULT_VALUE, CardIdentity.DEFAULT_SUIT);
+         this.cardError = true;
+      } 
+   }
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isSettingSuccessful = super.set(value, suit);
+      this.cardError = !isSettingSuccessful;
+      return isSettingSuccessful;
+   }
+   
+   public String toString()
+   {
+      if(this.cardError)
+         return "Invalid card suit and value!";
+      else
+         return this.getValue() + " of " + this.getSuit();
+   }
+   
+   public boolean getCardError()
+   {
+      return this.cardError;
+   }
+   
+   public boolean equals(Card card)
+   {
+      return this.getValue() == card.getValue()
+            && this.getSuit() == card.getSuit()
+            && this.getCardError() == card.getCardError();
+   }
+}
+
+class Hand
+{
+   public static final int MAX_CARDS = 30;
+   
+   private Card[] myCards;
+   private int numCards;
+   
+   public Hand()
+   {
+      this.myCards = new Card[MAX_CARDS];
+      this.numCards = 0;
+   }
+   
+   public void resetHand()
+   {
+      this.myCards = new Card[MAX_CARDS];
+      this.numCards = 0;
+   }
+   
+   public boolean takeCard(Card card)
+   {
+      if(this.numCards == MAX_CARDS) 
+         return false;
+      else
+      {
+         if(!card.getCardError())
+         {
+            this.myCards[this.numCards] = new 
+                  Card(card.getValue(), card.getSuit());
+            this.numCards++;
+         }
+         return true;
+      }
+   }
+   
+   public Card playCard()
+   {
+      if(this.numCards > 0) 
+      {
+         Card playedCard = this.myCards[this.numCards - 1];
+         this.myCards[this.numCards - 1] = null;
+         this.numCards--;
+         return playedCard;
+      }
+      else
+         return null;
+   }
+   
+   public String toString()
+   {
+      String hand = "Hand =  ( ";
+      int i;
+      for(i = 0; i < this.numCards - 1; i++)
+      {
+         hand += this.myCards[i] + ", ";
+      }
+      if(this.numCards > 0)
+         hand += this.myCards[this.numCards - 1];
+      hand += " )";
+      return hand;
+   }
+   
+   public int getNumCards()
+   {
+      return this.numCards;
+   }
+   
+   public Card inspectCard(int k)
+   {
+      if(k >= 0 && k < this.numCards)
+         return this.myCards[k];
+      else
+      {
+         Card badCard = new Card('X', CardIdentity.Suit.diamonds);
+         return badCard;
+      }
+   }
+}
+
+/*
+Phase 1: test of Card class
+
+Instantiate three cards:
+A of spades
+Invalid card suit and value!
+J of clubs
+
+After setting a good card bad and a bad card good:
+Invalid card suit and value!
+Q of spades
+J of clubs
+
+Phase 2: test of Hand class
+
+Hand full
+After deal
+Hand =  ( 3 of clubs, T of clubs, 9 of hearts, 3 of clubs, T of clubs, 9 of hear
+ts, 3 of clubs, T of clubs, 9 of hearts, 3 of clubs, T of clubs, 9 of hearts, 3 
+of clubs, T of clubs, 9 of hearts, 3 of clubs, T of clubs, 9 of hearts, 3 of clu
+bs, T of clubs, 9 of hearts, 3 of clubs, T of clubs, 9 of hearts, 3 of clubs, T 
+of clubs, 9 of hearts, 3 of clubs, T of clubs, 9 of hearts )
+
+Testing inspectCard()
+9 of hearts
+Invalid card suit and value!
+
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+Playing 9 of hearts
+Playing T of clubs
+Playing 3 of clubs
+
+After playing all cards
+Hand =  (  )
+*/

@@ -1,0 +1,681 @@
+/* Xinye Jiang (20477351) Solution
+ * Assignment #2
+ * Description: Set up the Deck class, and test run Deck, Card, Hand classes
+ * Date: 07/05/2021
+ */
+
+// Import Libraries
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Scanner;
+
+/**
+ * The Foothill program shows the test runs of Deck, Card, Hand classes.
+ */
+public class Foothill
+{
+   // Deal and display all the cards until the deck is empty.
+   public static void dealAllCards(Deck deck)
+   {
+      while(deck.getTopCard() >= 0)
+      {
+         System.out.printf(deck.dealCard() + " /  ");
+      }
+   }
+   
+   // Initialize an array of Hand objects and Deal a deck into it
+   public static void dealCardsToHands(Deck deck, Hand[] targetHands)
+   {
+      // Initialize each Hand object
+      for(int i = 0; i < targetHands.length; i++) 
+         targetHands[i] = new Hand();
+      
+      while(deck.getTopCard() >= 0)
+      {
+         // If no card left and still in loop
+         // Deck will give bad card which Hand won't take
+         for(int i = 0; i < targetHands.length; i++) 
+            targetHands[i].takeCard(deck.dealCard());
+      }
+   }
+   
+   // Display an array of Hand objects
+   public static void displayHands(Hand[] hands)
+   {
+      for(int i = 0; i < hands.length; i++) 
+         System.out.printf(hands[i] + "\n\n");
+   }
+   
+   // Test runs in the main()
+   public static void main(String[] args)
+   {
+      // Phase 1: test of Class Deck
+      System.out.printf("Phase 1: test of Class Deck\n\n");
+      
+      final int NUM_DECK_TEST1 = 2;
+      final int NUM_DECK_TEST2 = 1;
+      
+      Deck deckTest1 = new Deck(NUM_DECK_TEST1);
+      System.out.printf("Two packs of cards (unshuffled):\n");
+      dealAllCards(deckTest1);
+      
+      deckTest1 = new Deck(NUM_DECK_TEST1);
+      deckTest1.shuffle();
+      System.out.printf("\n\nTwo packs of cards (shuffled):\n");
+      dealAllCards(deckTest1);
+      
+      deckTest1 = new Deck(NUM_DECK_TEST2);
+      System.out.printf("\n\nA single pack of cards (unshuffled):\n");
+      dealAllCards(deckTest1);
+      
+      deckTest1 = new Deck(NUM_DECK_TEST2);
+      deckTest1.shuffle();
+      System.out.printf("\n\nA single pack of cards (shuffled):\n");
+      dealAllCards(deckTest1);
+      
+      // Phase 2: test of Classes Deck and Hand 
+      System.out.printf("\n\nPhase 2: test of Classes Deck and Hand\n\n");
+      
+      Scanner keyboard = new Scanner(System.in);
+      final int MIN_NUM_HANDS = 1;
+      final int MAX_NUM_HANDS = 10;
+      boolean isValidInput = false;
+      int numHands = 0;
+      
+      // Get a legal number of hands interactively
+      System.out.print("How many hands? (1 - 10, please): ");
+      while(!isValidInput)
+      {
+         if(keyboard.hasNextInt())
+         {
+            numHands = keyboard.nextInt();
+            if(numHands >= MIN_NUM_HANDS && numHands <= MAX_NUM_HANDS)
+               isValidInput = true;
+            else
+               System.out.print("Incorrect Value! Enter an integer (1 - 10): ");
+         }
+         else
+         {
+            System.out.print("Incorrect Type! Enter an integer (1 - 10): ");
+            keyboard.next();
+         }   
+      }
+      keyboard.close();
+      
+      Deck deckTest2 = new Deck(); // No-arg instantiation of 1-pack Deck
+      Hand[] handsTest = new Hand[numHands];
+      
+      dealCardsToHands(deckTest2, handsTest);
+      System.out.printf("\nHere are our hands, from unshuffled deck:\n");
+      displayHands(handsTest);
+      
+      deckTest2 = new Deck();
+      deckTest2.shuffle();
+      handsTest = new Hand[numHands];
+      
+      dealCardsToHands(deckTest2, handsTest);
+      System.out.printf("\nHere are our hands, from shuffled deck:\n");
+      displayHands(handsTest);      
+   } 
+}
+
+/**
+ * Class CardIdentity
+ * A CardIdentity object contains the suit and value of a card. It has a 
+ * default constructor and methods to validate, set and get suit and value.
+ */
+
+class CardIdentity
+{
+   public enum Suit {clubs, diamonds, hearts, spades}
+   
+   private char value;
+   private Suit suit;
+   
+   protected static final char DEFAULT_VALUE = 'A';
+   protected static final Suit DEFAULT_SUIT = Suit.spades;
+   protected static final char[] LEGAL_VALUES = {'2', '3', '4', '5', '6', 
+         '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'};  
+   
+   /**
+    * Default Constructor
+    */
+   
+   public CardIdentity()
+   {
+      this.value = DEFAULT_VALUE;
+      this.suit = DEFAULT_SUIT;
+   }
+   
+   /**
+    * The set method sets value and suit of CardIdentity if they are valid.
+    * @param value The input value of the CardIdentity.
+    * @param suit The input suit of the CardIdentity.
+    * @return Whether the set is successful.
+    */
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isValidInput = isValid(value, suit);
+      if(isValidInput)
+      {
+         this.value = value;
+         this.suit = suit;
+      }
+      return isValidInput;
+   }
+   
+   /**
+    * Getter for suit
+    */
+   
+   public Suit getSuit()
+   {
+      return this.suit;
+   }
+   
+   /**
+    * Getter for value
+    */
+   
+   public char getValue()
+   {
+      return this.value;
+   }
+   
+   /**
+    * The isValid method validates the input value and suit.
+    * @param value The input value of the CardIdentity.
+    * @param suit The input suit of the CardIdentity.
+    * @return Whether the value and suit are valid.
+    */
+
+   private static boolean isValid(char value, Suit suit)
+   {
+      // If value not in LEGAL_VALUES, return false
+      for(char legalValue: LEGAL_VALUES)
+      {
+         if(value == legalValue)
+            return true;
+      }
+      return false;
+   }  
+}
+
+/**
+ * Class Card (a subclass of CardIdentity)
+ * A Card object has cardError value indicating the card is good or not besides
+ * card suit and value. It has overloaded constructors, setters, getters, 
+ * toString and equals methods.
+ */
+
+class Card extends CardIdentity
+{
+   private boolean cardError;
+   
+   private static final boolean DEFAULT_CARD_ERROR = false;
+   protected static final Card BAD_CARD = 
+         new Card('X', CardIdentity.Suit.diamonds);
+   
+   /**
+    * Default Constructor
+    */
+   
+   public Card()
+   {
+      super();
+      this.cardError = DEFAULT_CARD_ERROR;
+   }
+   
+   /**
+    * Parameterized Constructor
+    * @param value The input value of the Card.
+    * @param suit The input suit of the Card.
+    */
+   
+   public Card(char value, Suit suit)
+   {
+      boolean setSuccess = set(value, suit);
+      if(!setSuccess)
+      {
+         set(CardIdentity.DEFAULT_VALUE, CardIdentity.DEFAULT_SUIT);
+         this.cardError = true;
+      } 
+   }
+   
+   /**
+    * The set method overrides the one in superclass and sets cardError.
+    * @param value The input value of the Card.
+    * @param suit The input suit of the Card.
+    * @return Whether the setting is successful.
+    */
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isSettingSuccessful = super.set(value, suit);
+      this.cardError = !isSettingSuccessful;
+      return isSettingSuccessful;
+   }
+   
+   /**
+    * The toString method overrides the one in Class Object.
+    * @return The formatted display of Card Class object.
+    */
+   
+   public String toString()
+   {
+      if(this.cardError)
+         return "Invalid card suit and value!";
+      else
+         return this.getValue() + " of " + this.getSuit();
+   }
+   
+   /**
+    * Getter for cardError
+    */
+   
+   public boolean getCardError()
+   {
+      return this.cardError;
+   }
+   
+   /**
+    * The equals method tests whether two cards are the same.
+    * @param card The input card to be compared.
+    * @return Whether the input card is the same as the current card.
+    */
+   
+   public boolean equals(Card card)
+   {
+      return this.getValue() == card.getValue()
+            && this.getSuit() == card.getSuit()
+            && this.getCardError() == card.getCardError();
+   }
+}
+
+/**
+ * Class Hand
+ * A Hand object shows cards of a player. It has default constructor, getter
+ * and methods to reset hand, take card, play card, inspect card and toString.
+ */
+
+class Hand
+{
+   public static final int MAX_CARDS = 30;
+   
+   private Card[] myCards;
+   private int numCards;
+   
+   /**
+    * Default Constructor
+    */
+   
+   public Hand()
+   {
+      this.myCards = new Card[MAX_CARDS];
+      this.numCards = 0;
+   }
+   
+   /**
+    * Reset Hand (the same as initializing again)
+    */
+   
+   public void resetHand()
+   {
+      this.myCards = new Card[MAX_CARDS];
+      this.numCards = 0;
+   }
+   
+   /**
+    * The takeCard method adds a card to hand if room available and card valid.
+    * @param card The input card to be added.
+    * @return Whether there is room for an incoming card.
+    */
+   
+   public boolean takeCard(Card card)
+   {
+      if(this.numCards == MAX_CARDS) 
+         return false;
+      else
+      {
+         if(!card.getCardError())
+         {
+            this.myCards[this.numCards] = new 
+                  Card(card.getValue(), card.getSuit());
+            this.numCards++;
+         }
+         return true;
+      }
+   }
+   
+   /**
+    * The playCard method plays a card on top.
+    * @return A card on top or a bad card if there is no card left.
+    */
+   
+   public Card playCard()
+   {
+      if(this.numCards > 0) 
+      {
+         Card playedCard = this.myCards[this.numCards - 1];
+         this.myCards[this.numCards - 1] = null;
+         this.numCards--;
+         return playedCard;
+      }
+      else
+         return Card.BAD_CARD;
+   }
+   
+   /**
+    * The toString method overrides the one in Class Object.
+    * @return The formatted display of Hand Class object.
+    */
+   
+   public String toString()
+   {
+      String hand = "Hand =  ( ";
+      int i;
+      for(i = 0; i < this.numCards - 1; i++)
+      {
+         hand += this.myCards[i] + ", ";
+      }
+      if(this.numCards > 0)
+         hand += this.myCards[this.numCards - 1];
+      hand += " )";
+      return hand;
+   }
+   
+   /**
+    * Getter for the number of cards in hand
+    */
+   
+   public int getNumCards()
+   {
+      return this.numCards;
+   }
+   
+   /**
+    * The inspectCard method inspects a card at a given position.
+    * @param k The given position of the inspected card.
+    * @return A card at position k or a bad card if there is no card.
+    */
+   
+   public Card inspectCard(int k)
+   {
+      if(k >= 0 && k < this.numCards)
+         return this.myCards[k];
+      else
+      {
+         return Card.BAD_CARD;
+      }
+   }
+}
+
+/**
+ * Class Deck
+ * A Deck object contains 1-6 packs of cards. Each pack has 52 standard 
+ * cards. The Deck object has overloaded constructors, methods to initialize 
+ * packs, shuffle, deal card, access top card and inspect card.
+ */
+
+class Deck 
+{
+   // Private static constants
+   private static final int MAX_PACKS = 6;
+   private static final int NUM_CARDS_PER_PACK = 52;
+   private static final int MAX_CARDS_PER_DECK = MAX_PACKS * NUM_CARDS_PER_PACK;
+   private static final int DEFAULT_NUM_PACKS = 1;
+   
+   // Private static member: masterPack
+   private static Card[] masterPack = new Card[NUM_CARDS_PER_PACK];
+   
+   // Private members
+   private Card[] cards;
+   private int topCard;
+   private int numPacks;
+   
+   /**
+    * Default Constructor
+    * If no parameters are passed, default one pack is assumed.
+    */
+   
+   public Deck()
+   {
+      this(DEFAULT_NUM_PACKS);
+   }
+   
+   /**
+    * Parameterized Constructor (one parameter)
+    * The constructor populates the arrays by initializePack() method.
+    * @param numPacks The given number of packs in the Deck.
+    */
+   
+   public Deck(int numPacks)
+   {
+      allocateMasterPack();
+      boolean isNumPacksValid = initializePack(numPacks);
+      if(!isNumPacksValid)
+         initializePack(DEFAULT_NUM_PACKS);
+   }
+   
+   /**
+    * The initializePack method re-populates cards[] with given packs of cards.
+    * @param numPacks The given number of packs in the Deck.
+    * @return The boolean value indicating whether numPacks is in range.
+    */
+   
+   public boolean initializePack(int numPacks)
+   {
+      if(numPacks > MAX_PACKS || numPacks < DEFAULT_NUM_PACKS)
+         return false;
+      else
+      {
+         this.topCard = numPacks * NUM_CARDS_PER_PACK - 1;
+         this.numPacks = numPacks;
+         this.cards = new Card[this.topCard + 1];
+         for(int i = 0; i < numPacks; i++)
+            for(int j = 0; j < NUM_CARDS_PER_PACK; j++)
+               this.cards[NUM_CARDS_PER_PACK * i + j] = masterPack[j];
+         return true;
+      }
+   }
+   
+   /**
+    * The shuffle method mixes up the cards.
+    */
+   
+   public void shuffle()
+   {
+      ArrayList<Card> cardList = new ArrayList<>(Arrays.asList(cards));
+      Collections.shuffle(cardList);
+      cardList.toArray(cards);
+   }
+   
+   /**
+    * The dealCard method returns and removes the card on top of cards[].
+    * @return A copy of the card at the top of the deck.
+    */
+   
+   public Card dealCard()
+   {
+      if(this.topCard >= 0) 
+      {
+         Card dealtCard = new Card(
+               this.cards[this.topCard].getValue(),
+               this.cards[this.topCard].getSuit());
+         this.cards[this.topCard] = null;
+         this.topCard--;
+         return dealtCard;
+      }
+      else // If no card left, deal a bad card.
+         return Card.BAD_CARD;
+   }
+   
+   /**
+    * Getter for the position of the card on top
+    */
+   
+   public int getTopCard()
+   {
+      return this.topCard;
+   }
+   
+   /**
+    * The inspectCard method accesses an individual card.
+    * @param k The position of the inspected card.
+    * @return A copy of the card or a bad card if exception is caught.
+    */
+   
+   public Card inspectCard(int k)
+   {
+      try
+      {
+         return new Card(this.cards[k].getValue(), this.cards[k].getSuit());
+      }
+      catch (IndexOutOfBoundsException ex)
+      {
+         return Card.BAD_CARD;
+      }
+   }
+   
+   /**
+    * The allocateMasterPack method builds masterPack[] if it is not built.
+    */
+   
+   private static void allocateMasterPack()
+   {
+      // If masterPack[0] is not null, masterPack is built before, do nothing.
+      if(masterPack[0] != null) 
+         return;
+      else 
+      {
+         int i = 0;
+         for(CardIdentity.Suit s: CardIdentity.Suit.values())
+         {
+            for(char c: CardIdentity.LEGAL_VALUES)
+            {
+               masterPack[i] = new Card(c, s);
+               i++;
+            }
+         }
+      }
+   }
+}
+
+/*
+Phase 1: test of Class Deck
+
+Two packs of cards (unshuffled):
+A of spades /  K of spades /  Q of spades /  J of spades /  T of spades /  9 of 
+spades /  8 of spades /  7 of spades /  6 of spades /  5 of spades /  4 of spade
+s /  3 of spades /  2 of spades /  A of hearts /  K of hearts /  Q of hearts /  
+J of hearts /  T of hearts /  9 of hearts /  8 of hearts /  7 of hearts /  6 of 
+hearts /  5 of hearts /  4 of hearts /  3 of hearts /  2 of hearts /  A of diamo
+nds /  K of diamonds /  Q of diamonds /  J of diamonds /  T of diamonds /  9 of 
+diamonds /  8 of diamonds /  7 of diamonds /  6 of diamonds /  5 of diamonds /  
+4 of diamonds /  3 of diamonds /  2 of diamonds /  A of clubs /  K of clubs /  Q
+ of clubs /  J of clubs /  T of clubs /  9 of clubs /  8 of clubs /  7 of clubs 
+/  6 of clubs /  5 of clubs /  4 of clubs /  3 of clubs /  2 of clubs /  A of sp
+ades /  K of spades /  Q of spades /  J of spades /  T of spades /  9 of spades 
+/  8 of spades /  7 of spades /  6 of spades /  5 of spades /  4 of spades /  3 
+of spades /  2 of spades /  A of hearts /  K of hearts /  Q of hearts /  J of he
+arts /  T of hearts /  9 of hearts /  8 of hearts /  7 of hearts /  6 of hearts 
+/  5 of hearts /  4 of hearts /  3 of hearts /  2 of hearts /  A of diamonds /  
+K of diamonds /  Q of diamonds /  J of diamonds /  T of diamonds /  9 of diamond
+s /  8 of diamonds /  7 of diamonds /  6 of diamonds /  5 of diamonds /  4 of di
+amonds /  3 of diamonds /  2 of diamonds /  A of clubs /  K of clubs /  Q of clu
+bs /  J of clubs /  T of clubs /  9 of clubs /  8 of clubs /  7 of clubs /  6 of
+ clubs /  5 of clubs /  4 of clubs /  3 of clubs /  2 of clubs /  
+
+Two packs of cards (shuffled):
+J of diamonds /  7 of hearts /  8 of spades /  8 of hearts /  J of clubs /  9 of
+ clubs /  3 of spades /  T of clubs /  T of clubs /  8 of diamonds /  K of clubs
+ /  J of spades /  3 of hearts /  9 of hearts /  2 of hearts /  6 of diamonds / 
+ K of clubs /  2 of spades /  5 of diamonds /  A of hearts /  2 of clubs /  9 of
+ diamonds /  K of spades /  Q of spades /  J of spades /  3 of diamonds /  6 of 
+hearts /  A of diamonds /  9 of diamonds /  8 of diamonds /  4 of hearts /  J of
+ clubs /  5 of spades /  T of spades /  8 of clubs /  Q of hearts /  2 of clubs 
+/  Q of clubs /  K of diamonds /  A of clubs /  2 of spades /  J of diamonds /  
+8 of spades /  3 of spades /  T of spades /  2 of diamonds /  Q of spades /  9 o
+f hearts /  2 of diamonds /  5 of hearts /  7 of diamonds /  6 of diamonds /  A 
+of clubs /  7 of hearts /  J of hearts /  T of diamonds /  3 of clubs /  9 of sp
+ades /  A of hearts /  T of hearts /  7 of spades /  2 of hearts /  6 of spades 
+/  6 of hearts /  4 of clubs /  T of diamonds /  3 of clubs /  4 of hearts /  3 
+of hearts /  K of hearts /  6 of spades /  5 of hearts /  4 of spades /  T of he
+arts /  J of hearts /  7 of diamonds /  6 of clubs /  Q of diamonds /  K of diam
+onds /  9 of spades /  8 of hearts /  3 of diamonds /  K of spades /  5 of clubs
+ /  4 of clubs /  6 of clubs /  4 of spades /  A of diamonds /  Q of hearts /  A
+ of spades /  4 of diamonds /  K of hearts /  5 of spades /  8 of clubs /  4 of 
+diamonds /  9 of clubs /  7 of clubs /  A of spades /  Q of clubs /  Q of diamon
+ds /  5 of clubs /  7 of clubs /  5 of diamonds /  7 of spades /  
+
+A single pack of cards (unshuffled):
+A of spades /  K of spades /  Q of spades /  J of spades /  T of spades /  9 of 
+spades /  8 of spades /  7 of spades /  6 of spades /  5 of spades /  4 of spade
+s /  3 of spades /  2 of spades /  A of hearts /  K of hearts /  Q of hearts /  
+J of hearts /  T of hearts /  9 of hearts /  8 of hearts /  7 of hearts /  6 of 
+hearts /  5 of hearts /  4 of hearts /  3 of hearts /  2 of hearts /  A of diamo
+nds /  K of diamonds /  Q of diamonds /  J of diamonds /  T of diamonds /  9 of 
+diamonds /  8 of diamonds /  7 of diamonds /  6 of diamonds /  5 of diamonds /  
+4 of diamonds /  3 of diamonds /  2 of diamonds /  A of clubs /  K of clubs /  Q
+ of clubs /  J of clubs /  T of clubs /  9 of clubs /  8 of clubs /  7 of clubs 
+/  6 of clubs /  5 of clubs /  4 of clubs /  3 of clubs /  2 of clubs /  
+
+A single pack of cards (shuffled):
+5 of hearts /  4 of hearts /  2 of diamonds /  7 of hearts /  9 of clubs /  7 of
+ diamonds /  4 of spades /  6 of spades /  K of spades /  Q of spades /  5 of di
+amonds /  T of clubs /  Q of clubs /  8 of diamonds /  J of spades /  5 of spade
+s /  J of clubs /  A of spades /  2 of clubs /  J of hearts /  9 of hearts /  4 
+of diamonds /  8 of hearts /  2 of hearts /  9 of diamonds /  Q of hearts /  3 o
+f clubs /  K of diamonds /  T of spades /  9 of spades /  3 of spades /  T of he
+arts /  8 of spades /  8 of clubs /  A of diamonds /  3 of hearts /  7 of clubs 
+/  7 of spades /  J of diamonds /  4 of clubs /  3 of diamonds /  Q of diamonds 
+/  2 of spades /  K of clubs /  K of hearts /  T of diamonds /  6 of hearts /  5
+ of clubs /  A of clubs /  A of hearts /  6 of clubs /  6 of diamonds /  
+
+Phase 2: test of Classes Deck and Hand
+
+How many hands? (1 - 10, please): 6
+
+Here are our hands, from unshuffled deck:
+Hand =  ( A of spades, 8 of spades, 2 of spades, 9 of hearts, 3 of hearts, T of 
+diamonds, 4 of diamonds, J of clubs, 5 of clubs )
+
+Hand =  ( K of spades, 7 of spades, A of hearts, 8 of hearts, 2 of hearts, 9 of 
+diamonds, 3 of diamonds, T of clubs, 4 of clubs )
+
+Hand =  ( Q of spades, 6 of spades, K of hearts, 7 of hearts, A of diamonds, 8 o
+f diamonds, 2 of diamonds, 9 of clubs, 3 of clubs )
+
+Hand =  ( J of spades, 5 of spades, Q of hearts, 6 of hearts, K of diamonds, 7 o
+f diamonds, A of clubs, 8 of clubs, 2 of clubs )
+
+Hand =  ( T of spades, 4 of spades, J of hearts, 5 of hearts, Q of diamonds, 6 o
+f diamonds, K of clubs, 7 of clubs )
+
+Hand =  ( 9 of spades, 3 of spades, T of hearts, 4 of hearts, J of diamonds, 5 o
+f diamonds, Q of clubs, 6 of clubs )
+
+
+Here are our hands, from shuffled deck:
+Hand =  ( 8 of diamonds, 6 of spades, 4 of clubs, Q of hearts, A of clubs, 6 of 
+diamonds, 2 of clubs, K of diamonds, 5 of clubs )
+
+Hand =  ( 3 of clubs, T of diamonds, 5 of hearts, 6 of hearts, K of spades, 9 of
+ diamonds, 3 of diamonds, 4 of diamonds, 7 of diamonds )
+
+Hand =  ( J of diamonds, 9 of clubs, 8 of clubs, 4 of spades, 2 of hearts, 7 of 
+clubs, 7 of spades, 2 of diamonds, 9 of hearts )
+
+Hand =  ( 3 of spades, Q of spades, 3 of hearts, T of clubs, 6 of clubs, A of di
+amonds, A of hearts, A of spades, 4 of hearts )
+
+Hand =  ( Q of clubs, Q of diamonds, 8 of hearts, T of spades, 7 of hearts, 5 of
+ diamonds, 9 of spades, J of hearts )
+
+Hand =  ( 5 of spades, 8 of spades, J of clubs, J of spades, 2 of spades, K of c
+lubs, K of hearts, T of hearts )
+
+
+*/

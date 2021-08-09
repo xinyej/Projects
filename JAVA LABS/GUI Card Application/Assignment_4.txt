@@ -1,0 +1,419 @@
+/* Xinye Jiang (20477351) Solution
+ * Assignment #4
+ * Description: Generate class GUICard for Card images and a scene for GUI apps
+ * Date: 07/12/2021
+ */
+
+package application;
+
+// Import Libraries
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.*;
+import javafx.geometry.Insets;
+import javafx.stage.Stage;
+import javafx.scene.image.*;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
+
+// Embody the needed Pane and Layouts
+public class Foothill extends Application
+{  
+   // Numbers and arrays that support the panes
+   final int NUM_CARDS_PER_HAND = 7;
+   final int NUM_PLAYERS = 2;
+   Image[] humanImages = new Image[NUM_CARDS_PER_HAND];
+   ImageView[] humanViews = new ImageView[NUM_CARDS_PER_HAND];
+   Image[] computerImages = new Image[NUM_CARDS_PER_HAND];
+   ImageView[] computerViews = new ImageView[NUM_CARDS_PER_HAND];
+   Image[] playedImages = new Image[NUM_CARDS_PER_HAND];
+   ImageView[] playedViews = new ImageView[NUM_CARDS_PER_HAND];
+   Label[] playLabelText = new Label[NUM_PLAYERS];
+   
+   public static void main(String[] args) 
+   {
+      launch(args);
+   }
+
+   // Override the start method to create a scene for the GUI app
+   public void start(Stage primaryStage)
+   {    
+      // Create the scene and place it in the stage
+      BorderPane pane = new BorderPane();    
+      Scene scene = new Scene(pane, 800, 600);
+      primaryStage.setTitle("Card Table");
+      primaryStage.setScene(scene);
+      
+      // Create 2 HBoxes (player & computer), and 1 FlowPane for played cards
+      HBox computerPane = new HBox(15);
+      computerPane.setPadding(new Insets(15, 100, 15, 100));
+      HBox humanPane = new HBox(15);
+      humanPane.setPadding(new Insets(15, 100, 15, 100));
+      FlowPane playedPane = new FlowPane(150, 15);
+      playedPane.setPadding(new Insets(100, 200, 100, 200));
+      
+      // Create images and add image views to computer, human panes
+      for(int i = 0; i < NUM_CARDS_PER_HAND; i++)
+      {
+         computerImages[i] = GUICard.getBackCardImage();
+         computerViews[i] = new ImageView(computerImages[i]);
+         computerPane.getChildren().add(computerViews[i]);
+         
+         humanImages[i] = GUICard.getImage(generateRandomCard());
+         humanViews[i] = new ImageView(humanImages[i]);
+         humanPane.getChildren().add(humanViews[i]);
+      }
+      
+      // Create two random cards, add image views and labels to play region
+      playLabelText[0] = new Label("Computer");
+      playLabelText[1] = new Label("You");
+      for(int i = 0; i < NUM_PLAYERS; i++)
+      {
+         playedImages[i] = GUICard.getImage(generateRandomCard());
+         playedViews[i] = new ImageView(playedImages[i]);
+         playLabelText[i].setGraphic(playedViews[i]);
+         playLabelText[i].setContentDisplay(ContentDisplay.TOP);
+         playedPane.getChildren().add(playLabelText[i]);
+      }
+      
+      pane.setTop(computerPane);
+      pane.setCenter(playedPane);  
+      pane.setBottom(humanPane); 
+      
+      // Show everything to the user
+      primaryStage.show();   
+   }
+   
+   // Generate a random card by using Math.random()
+   public static Card generateRandomCard()
+   {
+      return new Card(
+            GUICard.turnIntIntoCardValueChar(
+                  (int) (Math.random() * GUICard.numCardVals)),
+            GUICard.turnIntIntoSuit(
+                  (int) (Math.random() * GUICard.numSuitVals)));
+   }
+}
+
+/**
+ * Class GUICard
+ * The class reads and stores images in the file and has several methods to 
+ * convert from chars and suits to ints and back.
+ */
+
+class GUICard
+{
+   // Static Members (14 = A thru K + joker)
+   private static Image[][] imageCards = new Image[14][4];
+   private static ImageView[][] imageCardViews = new ImageView[14][4];
+   private static Image imageBack;
+   private static ImageView imageCardBack;
+   private static boolean imagesLoaded = false; 
+   
+   // Helper Static Arrays and Numbers
+   private static String cardlValsConvertAssist = "23456789TJQKAX";
+   private static String suitValsConvertAssist  = "CDHS";
+   private static Card.Suit suitConvertAssist[] =
+   {
+      Card.Suit.clubs,
+      Card.Suit.diamonds,
+      Card.Suit.hearts,
+      Card.Suit.spades
+   };
+   protected static int numCardVals = cardlValsConvertAssist.length();
+   protected static int numSuitVals = suitConvertAssist.length;
+   
+   /**
+    * Method loadCardImages loads images in the file to private static members.
+    */
+   
+   private static void loadCardImages()
+   {
+      if(imagesLoaded)   // If loaded before, just return
+         return;
+      else 
+      {
+         String imageFileName;
+         int intSuit, intVal;
+
+         for (intSuit = 0; intSuit < numSuitVals; intSuit++)
+            for (intVal = 0; intVal < numCardVals; intVal++ )
+            {
+               // Card images stored in images file has name like "AC.gif"
+               imageFileName = "images/" + 
+                     turnIntIntoCardValueChar(intVal) + 
+                     turnIntIntoCardSuitChar(intSuit) + ".gif";
+               imageCards[intVal][intSuit] = new Image(imageFileName);
+               imageCardViews[intVal][intSuit] = 
+                     new ImageView(imageCards[intVal][intSuit]);
+            }
+
+         imageFileName = "images/BK.gif";
+         imageBack = new Image(imageFileName);
+         imageCardBack = new ImageView(imageBack);
+         
+         imagesLoaded = true;
+      }
+   }
+   
+   /**
+    * The getImage method returns the image of the given card.
+    * @param card The input card object.
+    * @return The corresponding image of the input card.
+    */
+   
+   public static Image getImage(Card card)
+   {
+      loadCardImages();
+      return imageCards[valueAsInt(card)][suitAsInt(card)];
+   }
+   
+   /**
+    * The getBackCardImage method returns the image of the card back.
+    * @return The image of the card back.
+    */
+   
+   public static Image getBackCardImage() 
+   {
+      loadCardImages();
+      return imageBack;
+   }
+   
+   /**
+    * The turnIntIntoCardValueChar method turns 0-13 into '2','3',...,'A','X'.
+    * @param k An integer (0-13) (index of a char in cardlValsConvertAssist)
+    * @return The corresponding character in cardlValsConvertAssist.
+    */
+
+   public static char turnIntIntoCardValueChar(int k)
+   {
+      if ( k < 0 || k > 13)
+         return '?'; 
+      return cardlValsConvertAssist.charAt(k);
+   }
+   
+   /**
+    * The turnIntIntoCardSuitChar method turns 0-3 into 'C', 'D', 'H', 'S'.
+    * @param k An integer (0-3) (index of a char in suitValsConvertAssist)
+    * @return The corresponding character in suitValsConvertAssist.
+    */
+
+   public static char turnIntIntoCardSuitChar(int k) 
+   {
+      if ( k < 0 || k > 3)
+         return '?'; 
+      return suitValsConvertAssist.charAt(k); 
+   }
+   
+   /**
+    * The turnIntIntoSuit method turns 0-3 into Card.Suit enum values.
+    * @param k An integer (0-3) (index of a Card.Suit in suitConvertAssist)
+    * @return The corresponding Card.Suit value in suitConvertAssist.
+    */
+   
+   public static Card.Suit turnIntIntoSuit(int k) 
+   {
+      return suitConvertAssist[k];
+   }
+   
+   /**
+    * The valueAsInt method turns card into an index in cardlValsConvertAssist.
+    * @param card An input card.
+    * @return The corresponding index of card value in cardlValsConvertAssist.
+    */
+   
+   public static int valueAsInt(Card card)  
+   {
+      return cardlValsConvertAssist.indexOf(card.getValue());
+   }
+   
+   /**
+    * The suitAsInt method turns card into an index in suitConvertAssist.
+    * @param card An input card.
+    * @return The corresponding index of suit value in suitConvertAssist.
+    */
+   
+   public static int suitAsInt(Card card)
+   {
+      for(int i = 0; i < numSuitVals; i++)
+      {
+         if(suitConvertAssist[i] == card.getSuit())
+            return i;
+      }
+      return -1;
+   }
+}
+
+/**
+ * Class CardIdentity
+ * A CardIdentity object contains the suit and value of a card. It has a 
+ * default constructor and methods to validate, set and get suit and value.
+ */
+
+class CardIdentity
+{
+   public enum Suit {clubs, diamonds, hearts, spades}
+   
+   private char value;
+   private Suit suit;
+   
+   protected static final char DEFAULT_VALUE = 'A';
+   protected static final Suit DEFAULT_SUIT = Suit.spades;
+   protected static final char[] LEGAL_VALUES = {'2', '3', '4', '5', '6', 
+         '7', '8', '9', 'T', 'J', 'Q', 'K', 'A', 'X'};  
+   
+   /**
+    * Default Constructor
+    */
+   
+   public CardIdentity()
+   {
+      this.value = DEFAULT_VALUE;
+      this.suit = DEFAULT_SUIT;
+   }
+   
+   /**
+    * The set method sets value and suit of CardIdentity if they are valid.
+    * @param value The input value of the CardIdentity.
+    * @param suit The input suit of the CardIdentity.
+    * @return Whether the set is successful.
+    */
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isValidInput = isValid(value, suit);
+      if(isValidInput)
+      {
+         this.value = value;
+         this.suit = suit;
+      }
+      return isValidInput;
+   }
+   
+   /**
+    * Getter for suit
+    */
+   
+   public Suit getSuit()
+   {
+      return this.suit;
+   }
+   
+   /**
+    * Getter for value
+    */
+   
+   public char getValue()
+   {
+      return this.value;
+   }
+   
+   /**
+    * The isValid method validates the input value and suit.
+    * @param value The input value of the CardIdentity.
+    * @param suit The input suit of the CardIdentity.
+    * @return Whether the value and suit are valid.
+    */
+
+   private static boolean isValid(char value, Suit suit)
+   {
+      // If value not in LEGAL_VALUES, return false
+      for(char legalValue: LEGAL_VALUES)
+      {
+         if(value == legalValue)
+            return true;
+      }
+      return false;
+   }  
+}
+
+/**
+ * Class Card (a subclass of CardIdentity)
+ * A Card object has cardError value indicating the card is good or not besides
+ * card suit and value. It has overloaded constructors, setters, getters, 
+ * toString and equals methods.
+ */
+
+class Card extends CardIdentity
+{
+   private boolean cardError;
+   
+   private static final boolean DEFAULT_CARD_ERROR = false;
+   protected static final Card BAD_CARD = 
+         new Card('Y', CardIdentity.Suit.diamonds);
+   
+   /**
+    * Default Constructor
+    */
+   
+   public Card()
+   {
+      super();
+      this.cardError = DEFAULT_CARD_ERROR;
+   }
+   
+   /**
+    * Parameterized Constructor
+    * @param value The input value of the Card.
+    * @param suit The input suit of the Card.
+    */
+   
+   public Card(char value, Suit suit)
+   {
+      boolean setSuccess = set(value, suit);
+      if(!setSuccess)
+      {
+         set(CardIdentity.DEFAULT_VALUE, CardIdentity.DEFAULT_SUIT);
+         this.cardError = true;
+      } 
+   }
+   
+   /**
+    * The set method overrides the one in superclass and sets cardError.
+    * @param value The input value of the Card.
+    * @param suit The input suit of the Card.
+    * @return Whether the setting is successful.
+    */
+   
+   public boolean set(char value, Suit suit)
+   {
+      boolean isSettingSuccessful = super.set(value, suit);
+      this.cardError = !isSettingSuccessful;
+      return isSettingSuccessful;
+   }
+   
+   /**
+    * The toString method overrides the one in Class Object.
+    * @return The formatted display of Card Class object.
+    */
+   
+   public String toString()
+   {
+      if(this.cardError)
+         return "Invalid card suit and value!";
+      else
+         return this.getValue() + " of " + this.getSuit();
+   }
+   
+   /**
+    * Getter for cardError
+    */
+   
+   public boolean getCardError()
+   {
+      return this.cardError;
+   }
+   
+   /**
+    * The equals method tests whether two cards are the same.
+    * @param card The input card to be compared.
+    * @return Whether the input card is the same as the current card.
+    */
+   
+   public boolean equals(Card card)
+   {
+      return this.getValue() == card.getValue()
+            && this.getSuit() == card.getSuit()
+            && this.getCardError() == card.getCardError();
+   }
+}
